@@ -96,8 +96,9 @@ if __name__ == "__main__":
 	col = 0
 	for color in COLORS:
 		e = tk.Label(root, text=color, background=color,
-				width=16,font=(None, -FONT_SIZE))
-		e.grid(row=row, column=col)#, sticky=E+W)
+				#width=16,
+				font=(None, -FONT_SIZE))
+		e.grid(row=row, column=col, sticky=tk.E+tk.W)
 		row += 1
 		if (row > MAX_ROWS):
 			row = 0

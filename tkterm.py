@@ -10,19 +10,29 @@ This software is in the public domain and is provided without express or
 implied warranty. Permission to use, modify, or distribute the software
 for any purpose is hereby granted."""
 
+debugOn = True
 debugSerial = False
 try:
 	import Tkinter as tk
 except ImportError:
 	import tkinter as tk
+#from tk import filedialog as fd
+from tkinter import scrolledtext
+from tkinter import ttk
 from tkcolors import COLORS
 from SerialPort import SerialPort
 from win import listSerialPorts
+import serial
 import threading
 import time
+import win32clipboard
 
 REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
+
+PORTS = ["COM1"]
+SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
+		   57600, 115200, 230400, 460800, 921600]
 
 class OutputPipe:
 	"""A substitute file object for redirecting output to a function."""
@@ -56,32 +66,52 @@ class tkDialog(tk.Frame):
 		self.master.destroy()
 
 class NewConsole(tkDialog):
+	YBUT = 100
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("New tkTerm Console")
-		self.master.geometry("300x250")
+		self.master.wm_title("New Console")
+		self.master.geometry("230x150")
 		self.master.resizable(False, False)
 
-		self.ports = tk.StringVar()
-		self.ports.set(("COM1", "COM3", "COM4"))
-		#self.refresh()
-		self.portsel = tk.Listbox(self, listvariable = self.ports)
-		self.portsel.pack()
+		self.l_speed = tk.Label(self, text = "Speed:")
+		self.l_speed.place(x=30, y=20)
+		self.speed = tk.StringVar()
+		self.box = ttk.Combobox(self, width=10, state="readonly",
+							values = SPEEDS, textvariable = self.speed)
+		self.box.current(11)
+		self.box.place(x=100, y=20)
+		self.l_ports = tk.Label(self, text = "Port(s):")
+		self.l_ports.place(x=30, y=50)
+		self.port = tk.StringVar()
+		self.portsel = ttk.Combobox(self, width=10, state="readonly",
+							values = PORTS, textvariable = self.port)
+		self.portsel.place(x=100, y=50)
+		self.refresh()
 
-		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close)
-		self.b_cancel.place(x=70, y=200)
-		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh)
-		self.b_refresh.place(x=120, y=200)
-		self.b_ok = tk.Button(self, text = "   Ok   ", command = self.newConsole)
-		self.b_ok.place(x=170, y=200)
+		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close, width = 6)
+		self.b_cancel.place(x=30, y=self.YBUT)
+		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
+		self.b_refresh.place(x=90, y=self.YBUT)
+		self.b_ok = tk.Button(self, text = "Ok", command = self.master.destroy, width = 6)
+		self.b_ok.place(x=150, y=self.YBUT)
 
 	def refresh(self):
+		global PORTS
+		PORTS = []
 		p = listSerialPorts()
-		print(p)
-		self.ports.set(p)
+		if(p == []) :
+			PORTS.append("COM1")
+		else:
+			PORTS.append(p)
+		self.portsel['values'] = PORTS
+		self.port.set(PORTS[0])
 
-	def newConsole(self):
-		print(self.portsel.get(self.portsel.curselection()))
+	def onReturn(self):
+		self.master.deiconify()
+		self.master.wait_window()
+		t = (self.port.get(), self.speed.get())
+		if(debugOn) : print(t)
+		return t
 
 class LogConsole(tkDialog):
 	def __init__(self, master=None, **kwargs):
@@ -90,28 +120,11 @@ class LogConsole(tkDialog):
 		self.master.geometry("400x600")
 		self.master.resizable(False, False)
 
-class SetupOptionMenu(tk.OptionMenu):
-	FONT= ('calibri', 12)
-	def __init__(self, master, status, *options):
-		self.var = tk.StringVar(master)
-		self.var.set(status)
-		tk.OptionMenu.__init__(self, master, self.var, *options)
-		self.config(width=10, bg = "white", font=self.FONT)
-		self['menu'].config(width=10, bg = "white", font=self.FONT)
-
-	def update(self, newlist):
-		self["menu"].delete(0, "end")
-		for opt in newlist:
-			self["menu"].add_command(label=opt, command=lambda value=opt: self.var.set(value))
-		self.var.set(newlist[0])
-
 class Setup(tkDialog):
 	XLABEL = 30
 	XOPT = 120
+	YBUT = 210
 	FONT= ('calibri', 12)
-	PORTS = ["COM1", "COM3"]
-	SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
-		   57600, 115200, 230400, 460800, 921600]
 	DATA = ["7 bit", "8 bit"]
 	PARITY = ["none", "odd", "even", "mark", "space"]
 	STOP = ["1 bit", "2 bit"]
@@ -119,80 +132,55 @@ class Setup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title("Serial Setup")
-		self.master.geometry("280x330")
+		self.master.geometry("230x250")
 		self.master.resizable(False, False)
+		self.index = 0
+		self.labels = [None, None, None, None, None, None]
+		self.vars = [None, None, None, None, None, None]
+		self.boxes = [None, None, None, None, None, None]
 
-		self.l_port = tk.Label(self, text = "Port:")
-		self.v_port = tk.StringVar()
-		#self.refresh()
-		self.v_port.set(self.PORTS[0])
-		self.o_ports = tk.OptionMenu(self, self.v_port, *self.PORTS)
-		self.o_ports.config(width=10, bg = "white", font=self.FONT)
-		self.o_ports['menu'].config(bg = "white", font=self.FONT)
-		self.l_port.place(x=self.XLABEL, y=25)
-		self.o_ports.place(x=self.XOPT, y=20)
+		self.addOption("Port:", PORTS, 20)
+		self.addOption("Speed:", SPEEDS, 50, 11)
+		self.addOption("Data:", self.DATA, 80, 1)
+		self.addOption("Parity:", self.PARITY, 110)
+		self.addOption("Stop bits:", self.STOP, 140)
+		self.addOption("Flow control:", self.FLOW, 170)
+		self.refresh()
 
-		self.l_speed = tk.Label(self, text = "Speed:")
-		self.v_speed = tk.StringVar()
-		self.v_speed.set(self.SPEEDS[11])
-		self.o_speed = tk.OptionMenu(self, self.v_speed, *self.SPEEDS)
-		self.o_speed.config(width=10, bg = "white", font=self.FONT)
-		self.l_speed.place(x=self.XLABEL, y=66)
-		self.o_speed.place(x=self.XOPT, y=60)
+		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close, width = 6)
+		self.b_cancel.place(x=30, y=self.YBUT)
+		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
+		self.b_refresh.place(x=90, y=self.YBUT)
+		self.b_ok = tk.Button(self, text = "Ok", command = self.master.destroy, width = 6)
+		self.b_ok.place(x=150, y=self.YBUT)
 
-		self.l_data = tk.Label(self, text = "Data:")
-		self.v_data = tk.StringVar()
-		self.v_data.set(self.DATA[0])
-		self.o_data = tk.OptionMenu(self, self.v_data, *self.DATA)
-		self.o_data.config(width=10, bg = "white", font=self.FONT)
-		self.l_data.place(x=self.XLABEL, y=106)
-		self.o_data.place(x=self.XOPT, y=100)
-
-		self.l_parity = tk.Label(self, text = "Parity:")
-		self.v_parity = tk.StringVar()
-		self.v_parity.set(self.PARITY[0])
-		self.o_parity = tk.OptionMenu(self, self.v_parity, *self.PARITY)
-		self.o_parity.config(width=10, bg = "white", font=self.FONT)
-		self.l_parity.place(x=self.XLABEL, y=146)
-		self.o_parity.place(x=self.XOPT, y=140)
-
-		self.l_stop = tk.Label(self, text = "Stop bits:")
-		self.v_stop = tk.StringVar()
-		self.v_stop.set(self.STOP[0])
-		self.o_stop = tk.OptionMenu(self, self.v_stop, *self.STOP)
-		self.o_stop.config(width=10, bg = "white", font=self.FONT)
-		self.l_stop.place(x=self.XLABEL, y=186)
-		self.o_stop.place(x=self.XOPT, y=180)
-
-		self.l_flow = tk.Label(self, text = "Flow control:")
-		self.v_flow = tk.StringVar()
-		self.v_flow.set(self.FLOW[0])
-		self.o_flow = tk.OptionMenu(self, self.v_flow, *self.FLOW)
-		self.o_flow.config(width=10, bg = "white", font=self.FONT)
-		self.l_flow.place(x=self.XLABEL, y=226)
-		self.o_flow.place(x=self.XOPT, y=220)
-
-		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close)
-		self.b_cancel.place(x=50, y=280)
-		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh)
-		self.b_refresh.place(x=120, y=280)
-		self.b_ok = tk.Button(self, text = "   Ok   ", command = self.onReturn)
-		self.b_ok.place(x=190, y=280)
+	def addOption(self, lbl, lst, y, dflt=0):
+		self.labels[self.index] = tk.Label(self, text = lbl)
+		self.labels[self.index].place(x=self.XLABEL, y=y)
+		self.vars[self.index] = tk.StringVar()
+		self.boxes[self.index] = ttk.Combobox(self, width=10, state="readonly",
+							values = lst, textvariable = self.vars[self.index])
+		self.boxes[self.index].current(dflt)
+		self.boxes[self.index].place(x=self.XOPT, y=y)
+		self.index += 1
 
 	def refresh(self):
+		global PORTS
+		PORTS = []
 		p = listSerialPorts()
-		self.PORTS = ["COM1"]
-		print(p, self.PORTS)
-		if(p != []) :
-			self.PORTS.append(p)
-		self.o_ports.update()
-		self.o_ports["menu"].delete(0, "end")
-		for string in self.PORTS:
-			self.o_ports["menu"].add_command(label=string, command=lambda value=string: self.v_port.set(value))
-		self.v_port.set(self.PORTS[0])
+		if(p == []) :
+			PORTS.append("COM1")
+		else:
+			PORTS.append(p)
+		self.boxes[0]['values'] = PORTS
+		self.vars[0].set(PORTS[0])
 
 	def onReturn(self):
-		print(self.portsel.get(self.portsel.curselection()))
+		self.master.deiconify()
+		self.master.wait_window()
+		t = tuple(i.get() for i in self.vars)
+		if(debugOn) : print(t)
+		return t
 
 class Terminal(tkDialog):
 	def __init__(self, master=None, **kwargs):
@@ -212,38 +200,20 @@ class SerialConsole(tkDialog):
 		self.index = 0
 
 		# Command history
-		self.cmdvar = tk.StringVar()
+		self.copypaste = ""
 		self.history = []
 		self.historyindex = None
 		self.current = ""
-		self.prefixes = ["... ", ">>> ", ">> ", "> "]
-
-		# Text Box
-		self.text = tk.Text(self, insertontime=200, insertofftime=150, bg=bg)
-		self.text.insert("end", "Python Console\n")
-		self.text.insert("end", ">>> ")
-		#self.text.bind("<Return>", self.cb_return)
-		self.text.bind("<Up>", self.cb_back)
-		self.text.bind("<Down>", self.cb_forward)
-		#self.text.bind("<Tab>", self.cb_complete)
-		self.cmdentry = tk.Entry(self, textvariable = self.cmdvar)
-		self.cmdentry.bind("<Return>", self.send)
-
-		# Scroll bar
-		self.scroll = tk.Scrollbar(self, command=self.text.yview)
-		self.text.config(yscrollcommand=self.scroll.set)
-		self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-		self.text.pack(fill=tk.BOTH, expand=1)
-		self.text.focus()
-		self.cmdentry.pack(fill=tk.BOTH)
+		self.prefixes = ["$ ", "# ", "... ", ">>> ", ">> ", "> "]
 
 		# Menu bar
 		menubar = tk.Menu(self.master)
 		self.master.config(menu=menubar)
 
 		fileMenu = tk.Menu(menubar, tearoff=False)
-		fileMenu.add_command(label="New", command=self.newConsole)
+		fileMenu.add_command(label="New", command=self.newConsole, accelerator ="")
 		fileMenu.add_command(label="Log", command=self.logConsole)
+		fileMenu.add_separator()
 		fileMenu.add_command(label="Exit", command=self.close)
 		menubar.add_cascade(label="File", underline=0, menu=fileMenu)
 		self.bind_all("<Control-n>", self.newConsole)
@@ -259,15 +229,42 @@ class SerialConsole(tkDialog):
 		self.bind_all("<Control-o>", self.setupPort)
 		self.bind_all("<Control-t>", self.setupWindow)
 
-		if(debugSerial):
+		# Text Box
+		self.cmdvar = tk.StringVar()
+		self.textvar = tk.StringVar()
+		self.text = scrolledtext.ScrolledText(self, insertontime=200, insertofftime=150, bg=bg)
+		#self.text = tk.Entry(self, textvariable = self.textvar, state="readonly")
+		self.text.insert("end", "Python Console\n")
+		self.text.insert("end", ">>> ")
+		self.text.bind("<Key>", lambda e: self.txtEvent(e))
+		#self.text.bind("<Return>", self.cb_return)
+		self.text.configure(state="disabled")
+		self.cmdentry = tk.Entry(self, textvariable = self.cmdvar)
+		self.cmdentry.bind("<Return>", self.send)
+		self.cmdentry.bind("<Up>", self.cb_back)
+		self.cmdentry.bind("<Down>", self.cb_forward)
+		#self.cmdentry.bind("<Tab>", self.cb_complete)
+		self.bind_all("<Button-3>", self.paste)
+
+		# Scroll bar
+# 		self.scroll = tk.Scrollbar(self, command=self.text.yview)
+# 		self.text.config(yscrollcommand=self.scroll.set)
+# 		self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
+		self.text.pack(fill=tk.BOTH, expand=1)
+		self.cmdentry.pack(fill=tk.BOTH)
+		self.cmdentry.focus()
+
+		if(debugSerial):	#try:
 			if(isinstance(comport, str)):
 				self.serial = SerialPort(comport, comport, asyncr=True)
-			elif(isinstance(comport, SerialPort)):
+			elif(isinstance(comport, serial.Serial) or isinstance(comport, SerialPort)):
 				self.serial = comport
 			else:
 				pass
-		else:
+		else:	#except Exception as e:
 			self.serial = []
+			#self.setupPort()
+			#self.serial = SerialPort(comport, comport, asyncr=True)
 
 
 		# Configurable options.
@@ -306,31 +303,55 @@ class SerialConsole(tkDialog):
 
 	def newConsole(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		NewConsole(self.new)
+		settings = NewConsole(self.new).onReturn()
+		if(debugOn) : print("SETTINGS: ", settings)
 
 	def reset(self, event=None):
-		self.text.delete(0, len(self.text.get()))
+		self.text.delete(1.0, "end")
 		self.cmdentry.delete(0, len(self.cmdvar.get()))
 
 	def recv(self, event=None):
-		#print("Hello")
+		self.text.configure(state="normal")
 		self.text.configure(bg = COLORS[self.index])
 		self.index += 1
+		self.text.configure(state="disabled")
 		self.after(2000, self.recv)
 
 	def send(self, event=None):
-		print(self.cmdvar.get())
+		if(debugOn) : print(self.cmdvar.get())
 		self.cmdentry.delete(0, len(self.cmdvar.get()))
 
 	def setupPort(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		Setup(self.new)
+		settings = Setup(self.new).onReturn()
+		if(debugOn) : print("PORTSETTINGS: ", settings)
 
 	def setupWindow(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		Terminal(self.new)
+		settings = Terminal(self.new).onReturn()
+		if(debugOn) : print("WINDOWSETTINGS: ", settings)
+
+	def txtEvent(self, event):
+		if(event.state==12 and event.keysym=='c' ):
+			return
+		else:
+			return "break"
 
 	# History mechanism.
+
+	def copy(self, event):
+		pass
+
+	def paste(self, event):
+		if(self.copypaste == "") :
+			try:
+				win32clipboard.OpenClipboard()
+				self.copypaste = win32clipboard.GetClipboardData()
+				win32clipboard.CloseClipboard()
+			except Exception as e:
+				print(e)
+		if(debugOn) : print("PASTE EVENT: ", self.copypaste)
+		self.cmdentry.insert("end", self.copypaste)
 
 	def cb_back(self, event):
 		"""Step back in the history."""

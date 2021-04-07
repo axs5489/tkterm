@@ -61,6 +61,11 @@ class tkDialog(tk.Frame):
 		tk.Frame.__init__(self, master)
 		self.master = master
 		self.pack(fill=tk.BOTH, expand=1)
+		self.returnNone = True 		# Return nothing on close by default
+
+	def onOK(self):
+		self.returnNone = False 	# RETURN SOMETHING
+		self.close()
 
 	def close(self, event=None):
 		self.master.destroy()
@@ -92,7 +97,7 @@ class NewConsole(tkDialog):
 		self.b_cancel.place(x=30, y=self.YBUT)
 		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
 		self.b_refresh.place(x=90, y=self.YBUT)
-		self.b_ok = tk.Button(self, text = "Ok", command = self.master.destroy, width = 6)
+		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
 		self.b_ok.place(x=150, y=self.YBUT)
 
 	def refresh(self):
@@ -106,9 +111,10 @@ class NewConsole(tkDialog):
 		self.portsel['values'] = PORTS
 		self.port.set(PORTS[0])
 
-	def onReturn(self):
+	def settings(self):
 		self.master.deiconify()
 		self.master.wait_window()
+		if(self.returnNone) : return None
 		t = (self.port.get(), self.speed.get())
 		if(debugOn) : print(t)
 		return t
@@ -151,7 +157,7 @@ class Setup(tkDialog):
 		self.b_cancel.place(x=30, y=self.YBUT)
 		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
 		self.b_refresh.place(x=90, y=self.YBUT)
-		self.b_ok = tk.Button(self, text = "Ok", command = self.master.destroy, width = 6)
+		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
 		self.b_ok.place(x=150, y=self.YBUT)
 
 	def addOption(self, lbl, lst, y, dflt=0):
@@ -175,9 +181,10 @@ class Setup(tkDialog):
 		self.boxes[0]['values'] = PORTS
 		self.vars[0].set(PORTS[0])
 
-	def onReturn(self):
+	def settings(self):
 		self.master.deiconify()
 		self.master.wait_window()
+		if(self.returnNone) : return None
 		t = tuple(i.get() for i in self.vars)
 		if(debugOn) : print(t)
 		return t
@@ -236,6 +243,7 @@ class SerialConsole(tkDialog):
 		#self.text = tk.Entry(self, textvariable = self.textvar, state="readonly")
 		self.text.insert("end", "Python Console\n")
 		self.text.insert("end", ">>> ")
+		#self.text.bind("<ButtonRelease", self.copy)
 		self.text.bind("<Key>", lambda e: self.txtEvent(e))
 		#self.text.bind("<Return>", self.cb_return)
 		self.text.configure(state="disabled")
@@ -303,8 +311,8 @@ class SerialConsole(tkDialog):
 
 	def newConsole(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		settings = NewConsole(self.new).onReturn()
-		if(debugOn) : print("SETTINGS: ", settings)
+		st = NewConsole(self.new).settings()
+		if(debugOn) : print("SETTINGS: ", st)
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -323,13 +331,13 @@ class SerialConsole(tkDialog):
 
 	def setupPort(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		settings = Setup(self.new).onReturn()
-		if(debugOn) : print("PORTSETTINGS: ", settings)
+		st = Setup(self.new).settings()
+		if(debugOn) : print("PORTSETTINGS: ", st)
 
 	def setupWindow(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		settings = Terminal(self.new).onReturn()
-		if(debugOn) : print("WINDOWSETTINGS: ", settings)
+		st = Terminal(self.new).settings()
+		if(debugOn) : print("WINDOWSETTINGS: ", st)
 
 	def txtEvent(self, event):
 		if(event.state==12 and event.keysym=='c' ):
@@ -340,7 +348,9 @@ class SerialConsole(tkDialog):
 	# History mechanism.
 
 	def copy(self, event):
-		pass
+		if(debugOn) : print("COPY EVENT: ", event.num)
+		if(event.num):
+			pass
 
 	def paste(self, event):
 		if(self.copypaste == "") :

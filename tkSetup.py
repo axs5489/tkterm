@@ -32,7 +32,7 @@ class tkDialog(tk.Frame):
 	def close(self, event=None):
 		self.master.destroy()
 
-class NewConsole(tkDialog):
+class NewSetup(tkDialog):
 	YBUT = 100
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
@@ -81,14 +81,14 @@ class NewConsole(tkDialog):
 		if(debugOn) : print(t)
 		return t
 
-class LogConsole(tkDialog):
+class LogSetup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title("Log tkTerm Console")
 		self.master.geometry("400x600")
 		self.master.resizable(False, False)
 
-class Setup(tkDialog):
+class PortSetup(tkDialog):
 	XLABEL = 30
 	XOPT = 120
 	YBUT = 210
@@ -151,7 +151,7 @@ class Setup(tkDialog):
 		if(debugOn) : print(t)
 		return t
 
-class Terminal(tkDialog):
+class TerminalSetup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title("Terminal tkTerm Console")

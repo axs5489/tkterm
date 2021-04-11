@@ -17,9 +17,10 @@ try:
 except ImportError:
 	import tkinter as tk
 #from tk import filedialog as fd
+from tkinter import TclError
 from tkinter.scrolledtext import ScrolledText
 from tkcolors import COLORS
-from tkSetup import tkDialog, LogConsole, NewConsole, Setup, Terminal
+from tkSetup import tkDialog, LogSetup, NewSetup, PortSetup, TerminalSetup
 from SerialPort import SerialPort
 from idlelib.redirector import WidgetRedirector
 import serial
@@ -107,6 +108,7 @@ class SerialConsole(tkDialog):
 		self.text.configure(state="readonly")
 		self.text.insert("end", "Python Console\n")
 		self.text.insert("end", ">>> ")
+		self.text.bind("<ButtonRelease-1>", self.copy)
 		#self.text.bind("<Key>", lambda e: self.txtEvent(e))
 		#self.text.bind("<Return>", self.cb_return)
 		self.text.configure(state="readonly")
@@ -123,10 +125,14 @@ class SerialConsole(tkDialog):
 		self.cmdentry.bind("<Up>", self.cb_back)
 		self.cmdentry.bind("<Down>", self.cb_forward)
 		#self.cmdentry.bind("<Tab>", self.cb_complete)
+		self.bind_all("<Control-c>", self.copy)
+		self.bind_all("<Control-v>", self.paste)
 		self.bind_all("<Button-3>", self.paste)
 		self.cmdentry.pack(fill=tk.BOTH)
 		self.cmdentry.focus()
 
+		self.logfile = None
+		self.settings = ('COM1', '115200', '8 bit', 'none', '1 bit', 'none')
 		if(debugSerial):	#try:
 			if(isinstance(comport, str)):
 				self.serial = SerialPort(comport, comport, asyncr=True)
@@ -171,13 +177,18 @@ class SerialConsole(tkDialog):
 			self[key] = value
 
 	def logConsole(self, event=None):
-		self.new = tk.Toplevel(self.master)
-		LogConsole(self.new)
+		if(self.logfile == None) :
+			self.new = tk.Toplevel(self.master)
+			LogSetup(self.new)
+		else:
+			pass
 
 	def newConsole(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		st = NewConsole(self.new).settings()
+		st = NewSetup(self.new).settings()
 		if(debugOn) : print("SETTINGS: ", st)
+		if(self.logfile != None) : self.logConsole()
+
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -194,38 +205,50 @@ class SerialConsole(tkDialog):
 		if(debugOn) : print(self.cmdvar.get())
 		self.cmdentry.delete(0, len(self.cmdvar.get()))
 
+	def setupSerial(self, comport="COM1", baud=115200, data=8,
+				 parity="N", stop=1, xonxoff=None, rtscts=None):
+		if(self.serial.handle.isOpen()) : self.serial.close()
+		self.serial = SerialPort("tkterm", comport)
+
 	def setupPort(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		st = Setup(self.new).settings()
+		st = PortSetup(self.new).settings()
 		if(debugOn) : print("PORTSETTINGS: ", st)
 
 	def setupWindow(self, event=None):
 		self.new = tk.Toplevel(self.master)
-		st = Terminal(self.new).settings()
+		st = TerminalSetup(self.new).settings()
 		if(debugOn) : print("WINDOWSETTINGS: ", st)
 		self.text.configure(bg= st[0], fg = [1], font = st[2])
-
-	def txtEvent(self, event):
-		if(event.state==12 and event.keysym=='c' ):
-			return
-		else:
-			return "break"
 
 	# History mechanism.
 
 	def copy(self, event):
 		if(debugOn) : print("COPY EVENT: ", event.num)
 		if(event.num):
-			pass
+			try:
+				win32clipboard.OpenClipboard()
+				win32clipboard.EmptyClipboard()
+				self.copypaste = self.text.selection_get()
+				if(debugOn) : print(self.copypaste)
+				win32clipboard.SetClipboardData(1, self.copypaste)
+			except TclError:
+				pass
+			except Exception as e:
+				print(e)
+			finally:
+				win32clipboard.CloseClipboard()
+			#self.text.selection_clear()
 
 	def paste(self, event):
 		if(self.copypaste == "") :
 			try:
 				win32clipboard.OpenClipboard()
 				self.copypaste = win32clipboard.GetClipboardData()
-				win32clipboard.CloseClipboard()
 			except Exception as e:
 				print(e)
+			finally:
+				win32clipboard.CloseClipboard()
 		if(debugOn) : print("PASTE EVENT: ", self.copypaste)
 		self.cmdentry.insert("end", self.copypaste)
 
@@ -289,7 +312,7 @@ class SerialApp(threading.Thread):
 
 def start_new_console():
 	root = tk.Tk()
-	app = NewConsole(root)
+	app = NewSetup(root)
 	#app.dict["console"] = app
 	app.pack(fill=tk.BOTH, expand=1)
 	app.master.title("tkTerm v%s" % VERSION)

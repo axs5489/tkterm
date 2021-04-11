@@ -119,7 +119,8 @@ class SerialPort(object):
 		"""	Exception signifying a thread was blocked from getting access to the serial device"""
 		pass
 
-	def __init__(self,name,port,baud=115200,asyncr=False,tx_term='\n',echos=True):
+	def __init__(self, name, port, baud=115200, data=8, parity="N", stop=1,
+			  xonxoff=0, rtscts=0, asyncr=False, tx_term='\n', echos=True):
 		""" SerialPortDevice Constructor.
 				port: a "COMn" string
 				baud: the baud rate to use
@@ -133,7 +134,7 @@ class SerialPort(object):
 		# failes, then attempt to open it via the Proxy named pipe. If that
 		# also fails, throw the error.
 		try:
-			self.handle = serial.Serial(port=port, baudrate=baud, bytesize=8, 
+			self.handle = serial.Serial(port=port, baudrate=baud, bytesize=8,
 				parity="N", stopbits=1, timeout=3.0, writeTimeout=3.0, xonxoff=0, rtscts=0)
 		except Exception as e:
 			print("Couldn't connect directly to %s - %s"%(port,e))

@@ -21,18 +21,6 @@ SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
 FONTS = ["Calibri", "Terminal"]
 SIZES = list(range(10,20))
 
-class LabelFrame(tk.Frame):
-	def __init__(self, master=None, font = ("Calibri", 10), text="", size="100x50", **kwargs):
-		tk.Frame.__init__(self, master)
-		self.master = master
-		self.pack(fill=tk.BOTH, expand=1)
-		self.master.geometry(size)
-		self.master.resizable(False, False)
-		self.label = tk.Label(self, font = font, text = text)#, width = 12, height = 9)
-		self.label.place(x=25, y=25, anchor="center")
-
-	def configure(self, *args, **kwargs):
-		return self.label.configure(args, kwargs)
 
 class tkDialog(tk.Frame):
 	def __init__(self, master=None, **kwargs):
@@ -53,7 +41,7 @@ class NewSetup(tkDialog):
 	YBUT = 100
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("New Console")
+		self.master.wm_title("New Console Settings")
 		self.master.geometry("230x150")
 		self.master.resizable(False, False)
 
@@ -109,7 +97,7 @@ class PortSetup(tkDialog):
 	FLOW = ["none", "Xon/Xoff", "RTS/CTS", "DSR/DTR"]
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("Serial Setup")
+		self.master.wm_title("Serial Port Setup")
 		self.master.geometry("230x250")
 		self.master.resizable(False, False)
 		self.index = 0
@@ -167,7 +155,7 @@ class PortSetup(tkDialog):
 class LogSetup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("Log tkTerm Console")
+		self.master.wm_title("tkTerm Log Setup")
 		self.master.geometry("400x600")
 		self.master.resizable(False, False)
 
@@ -199,10 +187,21 @@ class ColorScale(tk.Frame):
 class TerminalSetup(tkDialog):
 	def __init__(self, master=None, font=("Terminal", 14), **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("Terminal tkTerm Console")
+		self.master.wm_title("tkTerm Terminal Settings")
 		self.master.geometry("430x460")
 		self.master.resizable(False, False)
 		self.types = [str, int, int, str, int, str]
+		self.settings = list(font)
+		self.settings.append((0, 0, 0))
+		self.settings.append((255, 255, 255))
+
+		self.red = ColorScale(self, "RED:")
+		self.green = ColorScale(self, "GREEN:")
+		self.blue = ColorScale(self, "BLUE:")
+		self.sampleframe = tk.Frame(self, width=120, height=120)
+		self.sample = tk.Label(self.sampleframe, font = font, text = "ABC", relief=tk.SUNKEN, width = 12, height = 9)
+		self.sample.pack(fill=tk.BOTH, expand=1)
+		self.updateSample()
 
 		self.v_active = tk.IntVar()
 		self.v_size = tk.IntVar()
@@ -217,20 +216,13 @@ class TerminalSetup(tkDialog):
 							 variable=self.v_active, value=1, command=self.sel)
 		self.background = tk.Radiobutton(self, text = "Background",
 							 variable=self.v_active, value=2, command=self.sel)
+		self.b_bold = tk.Button(self, text = "Bold", command = self.stylize, width = 6)
+		self.b_reverse = tk.Button(self, text = "Reverse", command = self.reverse, width = 6)
 		self.text.invoke()
-		self.font.current(0)
-		self.fontsize.current(0)
+		self.font.current(FONTS.index(self.settings[0]))
+		self.fontsize.current(SIZES.index(self.settings[1]))
 		self.font.bind('<<ComboboxSelected>>', self.updateFont)
 		self.fontsize.bind('<<ComboboxSelected>>', self.updateFont)
-		self.settings = list(font)
-		self.settings.append((0, 0, 0))
-		self.settings.append((255, 255, 255))
-
-		self.red = ColorScale(self, "RED:")
-		self.green = ColorScale(self, "GREEN:")
-		self.blue = ColorScale(self, "BLUE:")
-		self.sample = tk.Label(self, font = font, text = "ABC", width = 12, height = 9)
-		self.updateSample()
 
 		self.text.grid(row=0, column=1, columnspan = 5, padx=5, sticky="W")
 		self.background.grid(row=1, column=1, columnspan = 5, padx=5, sticky="W")
@@ -238,12 +230,16 @@ class TerminalSetup(tkDialog):
 		self.l_size.grid(row=1, column=4, columnspan = 2, sticky="W")
 		self.font.grid(row=0, column=5, columnspan = 3, sticky="W")
 		self.fontsize.grid(row=1, column=5, columnspan = 3, sticky="W")
+		self.b_bold.grid(row=0, column=8, columnspan = 3, pady=10)
+		self.b_reverse.grid(row=1, column=8, columnspan = 3, pady=10)
 		self.red.grid(row=2, column=0, columnspan = 8, padx=5)
 		self.green.grid(row=3, column=0, columnspan = 8, padx=5)
 		self.blue.grid(row=4, column=0, columnspan = 8, padx=5)
-		self.sample.grid(row=0, column=8, columnspan = 3, rowspan = 5, pady=10, sticky="E")
+		self.sampleframe.grid(row=2, column=8, columnspan = 3, rowspan = 3, pady=10, sticky="E")
+		#self.sampleframe.grid_propagate(0)
+		self.sampleframe.pack_propagate(0)
 
-		for r in range(6):
+		for r in range(5):
 			for c in range(10):
 				index = 10*r + c
 				#print(index)
@@ -255,6 +251,22 @@ class TerminalSetup(tkDialog):
 		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
 		self.b_cancel.grid(row=11, column=4, columnspan = 2, pady=10)
 		self.b_ok.grid(row=11, column=6, columnspan = 2, pady=10)
+
+	def stylize(self):
+		pass
+
+	def reverse(self):
+		t = self.settings[2]
+		self.settings[2] = self.settings[3]
+		self.settings[3] = t
+		self.updateSample()
+
+	def sel(self):
+		self.active = self.v_active.get()
+		print(self.settings[self.active + 1])
+		self.red.scale.set(self.settings[self.active + 1][0])
+		self.green.scale.set(self.settings[self.active + 1][1])
+		self.blue.scale.set(self.settings[self.active + 1][2])
 
 	def updateSample(self):
 		self.sample.configure(fg = "#%02x%02x%02x"%(self.settings[2]))
@@ -281,13 +293,6 @@ class TerminalSetup(tkDialog):
 			self.sample.configure(fg = colorname)
 		elif(self.active == 2):
 			self.sample.configure(bg = colorname)
-
-	def sel(self):
-		self.active = self.v_active.get()
-		color = self.settings[self.active + 1]
-		self.red.scale.set(color[0])
-		self.green.scale.set(color[1])
-		self.blue.scale.set(color[2])
 
 
 	def settings(self):
@@ -321,6 +326,9 @@ if __name__ == "__main__":
 	elif(test == 5) :
 		app = About(root)
 	elif(test == 6) :
-		app = LabelFrame(root, text = "ABC")
+		pass
 	app.pack(fill=tk.BOTH, expand=1)
+	if(hasattr(app, "recv")) :
+		print("Entered")
+		root.after(1000, app.recv)
 	tk.mainloop()

@@ -252,25 +252,32 @@ class TerminalSetup(tkDialog):
 		self.b_cancel.grid(row=11, column=4, columnspan = 2, pady=10)
 		self.b_ok.grid(row=11, column=6, columnspan = 2, pady=10)
 
-	def stylize(self):
-		pass
+	def refresh(self):
+		self.updateSample()
+		self.updateScales()
 
 	def reverse(self):
 		t = self.settings[2]
 		self.settings[2] = self.settings[3]
 		self.settings[3] = t
-		self.updateSample()
+		self.refresh()
+
+	def stylize(self):
+		pass
 
 	def sel(self):
 		self.active = self.v_active.get()
-		print(self.settings[self.active + 1])
-		self.red.scale.set(self.settings[self.active + 1][0])
-		self.green.scale.set(self.settings[self.active + 1][1])
-		self.blue.scale.set(self.settings[self.active + 1][2])
+		if(debugOn) : print(self.settings[self.active + 1])
+		self.updateScales()
 
 	def updateSample(self):
 		self.sample.configure(fg = "#%02x%02x%02x"%(self.settings[2]))
 		self.sample.configure(bg = "#%02x%02x%02x"%(self.settings[3]))
+
+	def updateScales(self):
+		self.red.scale.set(self.settings[self.active + 1][0])
+		self.green.scale.set(self.settings[self.active + 1][1])
+		self.blue.scale.set(self.settings[self.active + 1][2])
 
 	def updateRGBcontinuous(self):
 		self.settings[self.active + 1] = (self.red.get(),
@@ -278,7 +285,7 @@ class TerminalSetup(tkDialog):
 		self.updateSample()
 
 	def updateFont(self, event):
-		print("Font ", self.v_font.get(), self.v_size.get())
+		if(debugOn) : print("Font ", self.v_font.get(), self.v_size.get())
 		self.settings[0] = self.v_font.get()
 		self.settings[1] = int(self.v_size.get())
 		self.sample.configure(font = (self.settings[0], self.settings[1]))

@@ -188,7 +188,7 @@ class SerialConsole(tkDialog):
 		st = NewSetup(self.new).settings()
 		if(debugOn) : print("SETTINGS: ", st)
 		if(self.logfile != None) : self.logConsole()
-
+		#self.setupSerial(*st)
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -208,12 +208,13 @@ class SerialConsole(tkDialog):
 	def setupSerial(self, comport="COM1", baud=115200, data=8,
 				 parity="N", stop=1, xonxoff=None, rtscts=None):
 		if(self.serial.handle.isOpen()) : self.serial.close()
-		self.serial = SerialPort("tkterm", comport)
+		#self.setupSerial(*st)
 
 	def setupPort(self, event=None):
 		self.new = tk.Toplevel(self.master)
 		st = PortSetup(self.new).settings()
 		if(debugOn) : print("PORTSETTINGS: ", st)
+		#self.setupSerial(*st)
 
 	def setupWindow(self, event=None):
 		self.new = tk.Toplevel(self.master)

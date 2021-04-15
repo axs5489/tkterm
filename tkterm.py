@@ -20,7 +20,7 @@ except ImportError:
 from tkinter import TclError
 from tkinter.scrolledtext import ScrolledText
 from tkcolors import COLORS
-from tkSetup import tkDialog, LogSetup, NewSetup, PortSetup, TerminalSetup
+from tkSetup import tkDialog, About, LogSetup, NewSetup, PortSetup, TerminalSetup
 from SerialPort import SerialPort
 from idlelib.redirector import WidgetRedirector
 import serial
@@ -30,6 +30,8 @@ import win32clipboard
 
 REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
+
+DEFAULT = ('Helvetica', 14, 'normal', (0, 0, 0), (255, 255, 255))
 
 class OutputPipe:
 	"""A substitute file object for redirecting output to a function."""
@@ -68,6 +70,7 @@ class SerialConsole(tkDialog):
 		self.pad = 3
 		self.MAX_WIDTH = master.winfo_screenwidth() - self.pad
 		self.MAX_HEIGHT = master.winfo_screenheight() - self.pad
+		self.winset = DEFAULT
 		self.index = 0
 
 		# Command history
@@ -94,7 +97,8 @@ class SerialConsole(tkDialog):
 		editMenu = tk.Menu(menubar, tearoff=False)
 		editMenu.add_command(label="Reset", command=self.reset)
 		editMenu.add_command(label="Setup", command=self.setupPort)
-		editMenu.add_command(label="Terminal", command=self.setupWindow)
+		editMenu.add_command(label="Window", command=self.setupWindow)
+		editMenu.add_command(label="Advanced", command=self.setupTerminal)
 		menubar.add_cascade(label="Edit", underline=0, menu=editMenu)
 		self.bind_all("<Control-r>", self.reset)
 		self.bind_all("<Control-o>", self.setupPort)
@@ -111,7 +115,7 @@ class SerialConsole(tkDialog):
 		self.text.bind("<ButtonRelease-1>", self.copy)
 		#self.text.bind("<Key>", lambda e: self.txtEvent(e))
 		#self.text.bind("<Return>", self.cb_return)
-		self.text.configure(state="readonly")
+		self.updateWindow()
 
 		# Scroll bar
 #		self.scroll = tk.Scrollbar(self, command=self.text.yview)
@@ -216,11 +220,23 @@ class SerialConsole(tkDialog):
 		if(debugOn) : print("PORTSETTINGS: ", st)
 		#self.setupSerial(*st)
 
-	def setupWindow(self, event=None):
+	def setupTerminal(self, event=None):
 		self.new = tk.Toplevel(self.master)
 		st = TerminalSetup(self.new).settings()
-		if(debugOn) : print("WINDOWSETTINGS: ", st)
-		self.text.configure(bg= st[0], fg = [1], font = st[2])
+		if(debugOn) : print("TERMINALSETTINGS: ", st)
+
+	def setupWindow(self, event=None):
+		self.new = tk.Toplevel(self.master)
+		ret = TerminalSetup(self.new, self.winset).settings()
+		if(ret != None) :
+			self.winset = ret
+			if(debugOn) : print("WINDOWSETTINGS: ", self.winset)
+			self.updateWindow()
+
+	def updateWindow(self):
+		self.text.configure(bg = '#%02x%02x%02x'%self.winset[4],
+					 fg = '#%02x%02x%02x'%self.winset[3],
+					 font = self.winset[0:3])
 
 	# History mechanism.
 

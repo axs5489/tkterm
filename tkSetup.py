@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Created on Sat Apr 10 15:56:24 2021
 
 @author: axs5489
-"""
+'''
 
 debugOn = True
 try:
 	import Tkinter as tk
 except ImportError:
 	import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 from tkcolors import SIMPLE_COLORS
 from win import listSerialPorts
 
 
-PORTS = ["COM1"]
+PORTS = ['COM1']
 SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
 		   57600, 115200, 230400, 460800, 921600]
-FONTS = ["Calibri", "Terminal"]
+FONTS = ['Arial', 'Calibri', 'Cambria', 'Comic Sans', 'Georgia', 'Helvetica', 'Impact', 'Ink Free', 'Terminal', 'Times', 'Verdana']
 SIZES = list(range(10,20))
+WEIGHT = ['normal', 'bold']
 
 
 class tkDialog(tk.Frame):
@@ -41,30 +42,30 @@ class NewSetup(tkDialog):
 	YBUT = 100
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("New Console Settings")
-		self.master.geometry("230x150")
+		self.master.wm_title('New Console Settings')
+		self.master.geometry('230x150')
 		self.master.resizable(False, False)
 
-		self.l_speed = tk.Label(self, text = "Speed:")
+		self.l_speed = tk.Label(self, text = 'Speed:')
 		self.l_speed.place(x=30, y=20)
 		self.speed = tk.StringVar()
-		self.box = ttk.Combobox(self, width=10, state="readonly",
+		self.box = ttk.Combobox(self, width=10, state='readonly',
 							values = SPEEDS, textvariable = self.speed)
 		self.box.current(11)
 		self.box.place(x=100, y=20)
-		self.l_ports = tk.Label(self, text = "Port(s):")
+		self.l_ports = tk.Label(self, text = 'Port(s):')
 		self.l_ports.place(x=30, y=50)
 		self.port = tk.StringVar()
-		self.portsel = ttk.Combobox(self, width=10, state="readonly",
+		self.portsel = ttk.Combobox(self, width=10, state='readonly',
 							values = PORTS, textvariable = self.port)
 		self.portsel.place(x=100, y=50)
 		self.refresh()
 
-		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close, width = 6)
+		self.b_cancel = tk.Button(self, text = 'Cancel', command = self.close, width = 6)
 		self.b_cancel.place(x=30, y=self.YBUT)
-		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
+		self.b_refresh = tk.Button(self, text = 'Refresh', command = self.refresh, width = 6)
 		self.b_refresh.place(x=90, y=self.YBUT)
-		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
+		self.b_ok = tk.Button(self, text = 'Ok', command = self.onOK, width = 6)
 		self.b_ok.place(x=150, y=self.YBUT)
 
 	def refresh(self):
@@ -72,7 +73,7 @@ class NewSetup(tkDialog):
 		PORTS = []
 		p = listSerialPorts()
 		if(p == []) :
-			PORTS.append("COM1")
+			PORTS.append('COM1')
 		else:
 			PORTS.append(p)
 		self.portsel['values'] = PORTS
@@ -91,14 +92,14 @@ class PortSetup(tkDialog):
 	XOPT = 120
 	YBUT = 210
 	FONT= ('calibri', 12)
-	DATA = ["7 bit", "8 bit"]
-	PARITY = ["none", "odd", "even", "mark", "space"]
-	STOP = ["1 bit", "2 bit"]
-	FLOW = ["none", "Xon/Xoff", "RTS/CTS", "DSR/DTR"]
+	DATA = ['7 bit', '8 bit']
+	PARITY = ['none', 'odd', 'even', 'mark', 'space']
+	STOP = ['1 bit', '2 bit']
+	FLOW = ['none', 'Xon/Xoff', 'RTS/CTS', 'DSR/DTR']
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("Serial Port Setup")
-		self.master.geometry("230x250")
+		self.master.wm_title('Serial Port Setup')
+		self.master.geometry('230x250')
 		self.master.resizable(False, False)
 		self.index = 0
 		self.labels = [None, None, None, None, None, None]
@@ -106,26 +107,26 @@ class PortSetup(tkDialog):
 		self.boxes = [None, None, None, None, None, None]
 		self.types = [str, int, int, str, int, str]
 
-		self.addOption("Port:", PORTS, 20)
-		self.addOption("Speed:", SPEEDS, 50, 11)
-		self.addOption("Data:", self.DATA, 80, 1)
-		self.addOption("Parity:", self.PARITY, 110)
-		self.addOption("Stop bits:", self.STOP, 140)
-		self.addOption("Flow control:", self.FLOW, 170)
+		self.addOption('Port:', PORTS, 20)
+		self.addOption('Speed:', SPEEDS, 50, 11)
+		self.addOption('Data:', self.DATA, 80, 1)
+		self.addOption('Parity:', self.PARITY, 110)
+		self.addOption('Stop bits:', self.STOP, 140)
+		self.addOption('Flow control:', self.FLOW, 170)
 		self.refresh()
 
-		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close, width = 6)
+		self.b_cancel = tk.Button(self, text = 'Cancel', command = self.close, width = 6)
 		self.b_cancel.place(x=30, y=self.YBUT)
-		self.b_refresh = tk.Button(self, text = "Refresh", command = self.refresh, width = 6)
+		self.b_refresh = tk.Button(self, text = 'Refresh', command = self.refresh, width = 6)
 		self.b_refresh.place(x=90, y=self.YBUT)
-		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
+		self.b_ok = tk.Button(self, text = 'Ok', command = self.onOK, width = 6)
 		self.b_ok.place(x=150, y=self.YBUT)
 
 	def addOption(self, lbl, lst, y, dflt=0):
 		self.labels[self.index] = tk.Label(self, text = lbl)
 		self.labels[self.index].place(x=self.XLABEL, y=y)
 		self.vars[self.index] = tk.StringVar()
-		self.boxes[self.index] = ttk.Combobox(self, width=10, state="readonly",
+		self.boxes[self.index] = ttk.Combobox(self, width=10, state='readonly',
 							values = lst, textvariable = self.vars[self.index])
 		self.boxes[self.index].current(dflt)
 		self.boxes[self.index].place(x=self.XOPT, y=y)
@@ -136,7 +137,7 @@ class PortSetup(tkDialog):
 		PORTS = []
 		p = listSerialPorts()
 		if(p == []) :
-			PORTS.append("COM1")
+			PORTS.append('COM1')
 		else:
 			PORTS.append(p)
 		self.boxes[0]['values'] = PORTS
@@ -155,14 +156,14 @@ class PortSetup(tkDialog):
 class LogSetup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("tkTerm Log Setup")
-		self.master.geometry("400x600")
+		self.master.wm_title('tkTerm Log Setup')
+		self.master.geometry('400x600')
 		self.master.resizable(False, False)
 
 
 
 class ColorScale(tk.Frame):
-	def __init__(self, master=None, name="", **kwargs):
+	def __init__(self, master=None, name='', **kwargs):
 		tk.Frame.__init__(self, master, width = 100, height = 20)
 		self.master = master
 		#self.pack(fill=tk.BOTH, expand=1)
@@ -185,57 +186,63 @@ class ColorScale(tk.Frame):
 		return int(self.scale.get())
 
 class TerminalSetup(tkDialog):
-	def __init__(self, master=None, font=("Terminal", 14), **kwargs):
+	def __init__(self, master=None,
+			   st=('Terminal', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("tkTerm Terminal Settings")
-		self.master.geometry("430x460")
+		self.master.wm_title('tkTerm Terminal Settings')
+		self.master.geometry('430x460')
 		self.master.resizable(False, False)
 		self.types = [str, int, int, str, int, str]
-		self.settings = list(font)
-		self.settings.append((0, 0, 0))
-		self.settings.append((255, 255, 255))
+		self.tksettings = list(st)
+		self.tksettings.append((0, 0, 0))
+		self.tksettings.append((255, 255, 255))
 
-		self.red = ColorScale(self, "RED:")
-		self.green = ColorScale(self, "GREEN:")
-		self.blue = ColorScale(self, "BLUE:")
+		self.red = ColorScale(self, 'RED:')
+		self.green = ColorScale(self, 'GREEN:')
+		self.blue = ColorScale(self, 'BLUE:')
 		self.sampleframe = tk.Frame(self, width=120, height=120)
-		self.sample = tk.Label(self.sampleframe, font = font, text = "ABC", relief=tk.SUNKEN, width = 12, height = 9)
+		self.sample = tk.Label(self.sampleframe, font = self.tksettings[0:3],
+						 text = 'ABC', relief=tk.SUNKEN, width = 12, height = 9)
 		self.sample.pack(fill=tk.BOTH, expand=1)
 		self.updateSample()
 
 		self.v_active = tk.IntVar()
 		self.v_size = tk.IntVar()
 		self.v_font = tk.StringVar()
-		self.l_font = tk.Label(self, width = 5, text = "Font:")
-		self.l_size = tk.Label(self, width = 5, text = "Size:")
-		self.font =ttk.Combobox(self, width=8, state="readonly",
+		self.v_weight = tk.StringVar()
+		self.l_font = tk.Label(self, width = 5, text = 'Font:')
+		self.l_size = tk.Label(self, width = 5, text = 'Size:')
+		self.font =ttk.Combobox(self, width=8, state='readonly',
 							values = FONTS, textvariable = self.v_font)
-		self.fontsize =ttk.Combobox(self, width=8, state="readonly",
+		self.fontsize =ttk.Combobox(self, width=8, state='readonly',
 							values = SIZES, textvariable = self.v_size)
-		self.text = tk.Radiobutton(self, text = "Text",
+		self.text = tk.Radiobutton(self, text = 'Text',
 							 variable=self.v_active, value=1, command=self.sel)
-		self.background = tk.Radiobutton(self, text = "Background",
+		self.background = tk.Radiobutton(self, text = 'Background',
 							 variable=self.v_active, value=2, command=self.sel)
-		self.b_bold = tk.Button(self, text = "Bold", command = self.stylize, width = 6)
-		self.b_reverse = tk.Button(self, text = "Reverse", command = self.reverse, width = 6)
+		self.b_bold = tk.Checkbutton(self, text = 'Bold', command = self.updateFont, width = 6,
+							   onvalue = 'bold', offvalue = 'normal', variable = self.v_weight)
+		self.b_reverse = tk.Button(self, text = 'Reverse', command = self.reverse, width = 6)
 		self.text.invoke()
-		self.font.current(FONTS.index(self.settings[0]))
-		self.fontsize.current(SIZES.index(self.settings[1]))
+		if(self.tksettings[2] == 'normal') : self.b_bold.deselect()
+		elif(self.tksettings[2] == 'bold') : self.b_bold.select()
+		self.font.current(FONTS.index(self.tksettings[0]))
+		self.fontsize.current(SIZES.index(self.tksettings[1]))
 		self.font.bind('<<ComboboxSelected>>', self.updateFont)
 		self.fontsize.bind('<<ComboboxSelected>>', self.updateFont)
 
-		self.text.grid(row=0, column=1, columnspan = 5, padx=5, sticky="W")
-		self.background.grid(row=1, column=1, columnspan = 5, padx=5, sticky="W")
-		self.l_font.grid(row=0, column=4, columnspan = 2, sticky="W")
-		self.l_size.grid(row=1, column=4, columnspan = 2, sticky="W")
-		self.font.grid(row=0, column=5, columnspan = 3, sticky="W")
-		self.fontsize.grid(row=1, column=5, columnspan = 3, sticky="W")
+		self.text.grid(row=0, column=1, columnspan = 5, padx=5, sticky='W')
+		self.background.grid(row=1, column=1, columnspan = 5, padx=5, sticky='W')
+		self.l_font.grid(row=0, column=4, columnspan = 2, sticky='W')
+		self.l_size.grid(row=1, column=4, columnspan = 2, sticky='W')
+		self.font.grid(row=0, column=5, columnspan = 3, sticky='W')
+		self.fontsize.grid(row=1, column=5, columnspan = 3, sticky='W')
 		self.b_bold.grid(row=0, column=8, columnspan = 3, pady=10)
 		self.b_reverse.grid(row=1, column=8, columnspan = 3, pady=10)
 		self.red.grid(row=2, column=0, columnspan = 8, padx=5)
 		self.green.grid(row=3, column=0, columnspan = 8, padx=5)
 		self.blue.grid(row=4, column=0, columnspan = 8, padx=5)
-		self.sampleframe.grid(row=2, column=8, columnspan = 3, rowspan = 3, pady=10, sticky="E")
+		self.sampleframe.grid(row=2, column=8, columnspan = 3, rowspan = 3, pady=10, sticky='E')
 		#self.sampleframe.grid_propagate(0)
 		self.sampleframe.pack_propagate(0)
 
@@ -247,8 +254,8 @@ class TerminalSetup(tkDialog):
 						 command=lambda i=index: self.updateRGBpreset(i))
 				button.grid(row=5+r, column=c+1, pady=5)
 
-		self.b_cancel = tk.Button(self, text = "Cancel", command = self.close, width = 6)
-		self.b_ok = tk.Button(self, text = "Ok", command = self.onOK, width = 6)
+		self.b_cancel = tk.Button(self, text = 'Cancel', command = self.close, width = 6)
+		self.b_ok = tk.Button(self, text = 'Ok', command = self.onOK, width = 6)
 		self.b_cancel.grid(row=11, column=4, columnspan = 2, pady=10)
 		self.b_ok.grid(row=11, column=6, columnspan = 2, pady=10)
 
@@ -257,38 +264,36 @@ class TerminalSetup(tkDialog):
 		self.updateScales()
 
 	def reverse(self):
-		t = self.settings[2]
-		self.settings[2] = self.settings[3]
-		self.settings[3] = t
+		t = self.tksettings[3]
+		self.tksettings[3] = self.tksettings[4]
+		self.tksettings[4] = t
 		self.refresh()
-
-	def stylize(self):
-		pass
 
 	def sel(self):
 		self.active = self.v_active.get()
-		if(debugOn) : print(self.settings[self.active + 1])
+		if(debugOn) : print(self.tksettings[self.active + 2])
 		self.updateScales()
 
 	def updateSample(self):
-		self.sample.configure(fg = "#%02x%02x%02x"%(self.settings[2]))
-		self.sample.configure(bg = "#%02x%02x%02x"%(self.settings[3]))
+		self.sample.configure(fg = '#%02x%02x%02x'%(self.tksettings[3]))
+		self.sample.configure(bg = '#%02x%02x%02x'%(self.tksettings[4]))
 
 	def updateScales(self):
-		self.red.scale.set(self.settings[self.active + 1][0])
-		self.green.scale.set(self.settings[self.active + 1][1])
-		self.blue.scale.set(self.settings[self.active + 1][2])
+		self.red.scale.set(self.tksettings[self.active + 2][0])
+		self.green.scale.set(self.tksettings[self.active + 2][1])
+		self.blue.scale.set(self.tksettings[self.active + 2][2])
 
 	def updateRGBcontinuous(self):
-		self.settings[self.active + 1] = (self.red.get(),
+		self.tksettings[self.active + 2] = (self.red.get(),
 									self.green.get(), self.blue.get())
 		self.updateSample()
 
-	def updateFont(self, event):
-		if(debugOn) : print("Font ", self.v_font.get(), self.v_size.get())
-		self.settings[0] = self.v_font.get()
-		self.settings[1] = int(self.v_size.get())
-		self.sample.configure(font = (self.settings[0], self.settings[1]))
+	def updateFont(self, event=None):
+		if(debugOn) : print('Font ', self.v_font.get(), self.v_size.get(), self.v_weight.get())
+		self.tksettings[0] = self.v_font.get()
+		self.tksettings[1] = int(self.v_size.get())
+		self.tksettings[2] = self.v_weight.get()
+		self.sample.configure(font = self.tksettings[0:3])
 
 	def updateRGBpreset(self, index):
 		colorname = SIMPLE_COLORS[index]
@@ -301,12 +306,11 @@ class TerminalSetup(tkDialog):
 		elif(self.active == 2):
 			self.sample.configure(bg = colorname)
 
-
 	def settings(self):
 		self.master.deiconify()
 		self.master.wait_window()
 		if(self.returnNone) : return None
-		t = tuple(i.get() for i in self.vars)
+		t = tuple(self.tksettings)
 		if(debugOn) : print(t)
 		return t
 
@@ -314,14 +318,15 @@ class TerminalSetup(tkDialog):
 class About(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title("About tkTerm")
-		self.master.geometry("400x600")
+		self.master.wm_title('About tkTerm')
+		self.master.geometry('400x600')
 		self.master.resizable(False, False)
 
 		
-if __name__ == "__main__":
+if __name__ == '__main__':
 	test = 4
 	root = tk.Tk()
+	#print(font.families())
 	if(test == 1) :
 		app = NewSetup(root)
 	elif(test == 2) :
@@ -335,7 +340,7 @@ if __name__ == "__main__":
 	elif(test == 6) :
 		pass
 	app.pack(fill=tk.BOTH, expand=1)
-	if(hasattr(app, "recv")) :
-		print("Entered")
+	if(hasattr(app, 'recv')) :
+		print('Entered')
 		root.after(1000, app.recv)
 	tk.mainloop()

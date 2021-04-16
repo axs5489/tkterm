@@ -18,7 +18,7 @@ from win import listSerialPorts
 PORTS = ['COM1']
 SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
 		   57600, 115200, 230400, 460800, 921600]
-FONTS = ['Arial', 'Calibri', 'Cambria', 'Comic Sans', 'Georgia', 'Helvetica', 'Impact', 'Ink Free', 'Terminal', 'Times', 'Verdana']
+FONTS = ['Arial', 'Calibri', 'Cambria', 'Comic Sans', 'Courier', 'Georgia', 'Helvetica', 'Impact', 'Ink Free', 'Terminal', 'Times', 'Verdana']
 SIZES = list(range(10,20))
 WEIGHT = ['normal', 'bold']
 
@@ -187,7 +187,7 @@ class ColorScale(tk.Frame):
 
 class TerminalSetup(tkDialog):
 	def __init__(self, master=None,
-			   st=('Terminal', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
+			   st=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('tkTerm Terminal Settings')
 		self.master.geometry('430x460')

@@ -31,7 +31,7 @@ import win32clipboard
 REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
 
-DEFAULT = ('Helvetica', 14, 'normal', (0, 0, 0), (255, 255, 255))
+DEFAULT = ('Courier', 14, 'normal', (0, 0, 0), (255, 255, 255))
 
 class OutputPipe:
 	"""A substitute file object for redirecting output to a function."""
@@ -74,7 +74,8 @@ class SerialConsole(tkDialog):
 		self.index = 0
 
 		# Command history
-		self.copypaste = ""
+		self.strcopy = ""
+		self.strpaste = ""
 		self.history = []
 		self.historyindex = None
 		self.current = ""
@@ -87,6 +88,7 @@ class SerialConsole(tkDialog):
 		fileMenu = tk.Menu(menubar, tearoff=False)
 		fileMenu.add_command(label="New", command=self.newConsole)#, accelerator ="")
 		fileMenu.add_command(label="Log", command=self.logConsole)
+		#fileMenu.add_command(label="Send file", command=self.sendfile)
 		fileMenu.add_separator()
 		fileMenu.add_command(label="Exit", command=self.close)
 		menubar.add_cascade(label="File", underline=0, menu=fileMenu)
@@ -209,6 +211,9 @@ class SerialConsole(tkDialog):
 		if(debugOn) : print(self.cmdvar.get())
 		self.cmdentry.delete(0, len(self.cmdvar.get()))
 
+	def sendfile(self, event=None):
+		pass
+
 	def setupSerial(self, comport="COM1", baud=115200, data=8,
 				 parity="N", stop=1, xonxoff=None, rtscts=None):
 		if(self.serial.handle.isOpen()) : self.serial.close()
@@ -246,9 +251,9 @@ class SerialConsole(tkDialog):
 			try:
 				win32clipboard.OpenClipboard()
 				win32clipboard.EmptyClipboard()
-				self.copypaste = self.text.selection_get()
-				if(debugOn) : print(self.copypaste)
-				win32clipboard.SetClipboardData(1, self.copypaste)
+				self.strcopy = self.text.selection_get()
+				if(debugOn) : print(self.strcopy)
+				win32clipboard.SetClipboardData(1, self.strcopy)
 			except TclError:
 				pass
 			except Exception as e:
@@ -258,16 +263,25 @@ class SerialConsole(tkDialog):
 			#self.text.selection_clear()
 
 	def paste(self, event):
-		if(self.copypaste == "") :
+		if(self.strcopy == "") :
 			try:
 				win32clipboard.OpenClipboard()
-				self.copypaste = win32clipboard.GetClipboardData()
+				self.strcopy = win32clipboard.GetClipboardData().strip()
 			except Exception as e:
 				print(e)
 			finally:
 				win32clipboard.CloseClipboard()
-		if(debugOn) : print("PASTE EVENT: ", self.copypaste)
-		self.cmdentry.insert("end", self.copypaste)
+				#if(debugOn) : print("PASTE EVENT: ", self.strcopy)
+		#else :
+		self.strpaste = self.strcopy
+		#print(self.strpaste)
+		index = self.strpaste.find('\n')
+		while(index != -1):
+			self.cmdentry.insert("end", self.strpaste[0:index])
+			self.strpaste = self.strpaste[index+1:]
+			self.send()
+			index = self.strpaste.find('\n')
+		if(len(self.strpaste)) : self.cmdentry.insert("end", self.strpaste)
 
 	def cb_back(self, event):
 		"""Step back in the history."""

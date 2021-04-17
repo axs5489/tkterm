@@ -38,6 +38,38 @@ class tkDialog(tk.Frame):
 		self.master.destroy()
 
 
+class ColorScale(tk.Frame):
+	def __init__(self, master=None, name='', **kwargs):
+		tk.Frame.__init__(self, master, width = 100, height = 20)
+		self.master = master
+		#self.pack(fill=tk.BOTH, expand=1)
+
+		self.l_name = tk.Label(self, width = 5, text = name)
+		self.l_value = tk.Label(self, width = 4, text =0)
+		self.scale = tk.Scale(self, from_= 0, to = 255, #label=name,
+			orient=tk.HORIZONTAL, length = 200, showvalue=0, #tickinterval=20,
+			resolution=1, command=self.updateLabel)
+
+		self.l_name.grid()
+		self.l_value.grid(row=0, column=1)
+		self.scale.grid(row=0, column=2)
+
+	def updateLabel(self, value):
+		self.l_value.config(text = value)
+		self.master.updateRGBcontinuous()
+
+	def get(self):
+		return int(self.scale.get())
+
+
+class About(tkDialog):
+	def __init__(self, master=None, **kwargs):
+		tkDialog.__init__(self, master)
+		self.master.wm_title('About tkTerm')
+		self.master.geometry('400x600')
+		self.master.resizable(False, False)
+
+
 class NewSetup(tkDialog):
 	YBUT = 100
 	def __init__(self, master=None, **kwargs):
@@ -83,9 +115,10 @@ class NewSetup(tkDialog):
 		self.master.deiconify()
 		self.master.wait_window()
 		if(self.returnNone) : return None
-		t = (self.port.get(), int(self.speed.get()))
+		t = (self.port.get()[2:-3], int(self.speed.get()))
 		if(debugOn) : print(t)
 		return t
+
 
 class PortSetup(tkDialog):
 	XLABEL = 30
@@ -153,6 +186,7 @@ class PortSetup(tkDialog):
 		if(debugOn) : print(t)
 		return t
 
+
 class LogSetup(tkDialog):
 	def __init__(self, master=None, **kwargs):
 		tkDialog.__init__(self, master)
@@ -161,31 +195,15 @@ class LogSetup(tkDialog):
 		self.master.resizable(False, False)
 
 
-
-class ColorScale(tk.Frame):
-	def __init__(self, master=None, name='', **kwargs):
-		tk.Frame.__init__(self, master, width = 100, height = 20)
-		self.master = master
-		#self.pack(fill=tk.BOTH, expand=1)
-
-		self.l_name = tk.Label(self, width = 5, text = name)
-		self.l_value = tk.Label(self, width = 4, text =0)
-		self.scale = tk.Scale(self, from_= 0, to = 255, #label=name,
-			orient=tk.HORIZONTAL, length = 200, showvalue=0, #tickinterval=20,
-			resolution=1, command=self.updateLabel)
-
-		self.l_name.grid()
-		self.l_value.grid(row=0, column=1)
-		self.scale.grid(row=0, column=2)
-
-	def updateLabel(self, value):
-		self.l_value.config(text = value)
-		self.master.updateRGBcontinuous()
-
-	def get(self):
-		return int(self.scale.get())
-
 class TerminalSetup(tkDialog):
+	def __init__(self, master=None, **kwargs):
+		tkDialog.__init__(self, master)
+		self.master.wm_title('tkTerm Terminal Settings')
+		self.master.geometry('430x460')
+		self.master.resizable(False, False)
+
+
+class WindowSetup(tkDialog):
 	def __init__(self, master=None,
 			   st=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
@@ -315,13 +333,6 @@ class TerminalSetup(tkDialog):
 		return t
 
 
-class About(tkDialog):
-	def __init__(self, master=None, **kwargs):
-		tkDialog.__init__(self, master)
-		self.master.wm_title('About tkTerm')
-		self.master.geometry('400x600')
-		self.master.resizable(False, False)
-
 		
 if __name__ == '__main__':
 	test = 4
@@ -336,9 +347,9 @@ if __name__ == '__main__':
 	elif(test == 4) :
 		app = TerminalSetup(root)
 	elif(test == 5) :
-		app = About(root)
+		app = WindowSetup(root)
 	elif(test == 6) :
-		pass
+		app = About(root)
 	app.pack(fill=tk.BOTH, expand=1)
 	if(hasattr(app, 'recv')) :
 		print('Entered')

@@ -20,7 +20,7 @@ except ImportError:
 from tkinter import TclError
 from tkinter.scrolledtext import ScrolledText
 from tkcolors import COLORS
-from tkSetup import tkDialog, About, LogSetup, NewSetup, PortSetup, TerminalSetup
+from tkSetup import tkDialog, About, LogSetup, NewSetup, PortSetup, TerminalSetup, WindowSetup
 from SerialPort import SerialPort
 from idlelib.redirector import WidgetRedirector
 import serial
@@ -62,11 +62,28 @@ class ReadOnlyScrolledText(ScrolledText):
 		self.insert = self.redirector.register("insert", lambda *args, **kw: "break")
 		self.delete = self.redirector.register("delete", lambda *args, **kw: "break")
 
+class tkTermMaster(tkDialog):
+	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
+		tkDialog.__init__(self, master)
+		self.windows = [tk.Toplevel(self.master)]
+		self.consoles = [SerialConsole(self.windows[-1], self)]
+		self.master.withdraw()
+
+	def add(self, **st):
+		self.windows.append(tk.Toplevel(self.master))
+		self.consoles.append(SerialConsole(self.windows[-1], self, st))
+
+	def recv(self, **st):
+		for c in self.consoles:
+			c.recv()
+		self.after(500, self.recv)
+
 class SerialConsole(tkDialog):
-	def __init__(self, master=None, comport = "COM1", bg="blue", **kwargs):
+	def __init__(self, master=None, windower = None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.geometry("513x714")
 		self.master.resizable(False, False)
+		self.windower = windower
 		self.pad = 3
 		self.MAX_WIDTH = master.winfo_screenwidth() - self.pad
 		self.MAX_HEIGHT = master.winfo_screenheight() - self.pad
@@ -88,7 +105,7 @@ class SerialConsole(tkDialog):
 		fileMenu = tk.Menu(menubar, tearoff=False)
 		fileMenu.add_command(label="New", command=self.newConsole)#, accelerator ="")
 		fileMenu.add_command(label="Log", command=self.logConsole)
-		#fileMenu.add_command(label="Send file", command=self.sendfile)
+		fileMenu.add_command(label="Send file", command=self.sendfile)
 		fileMenu.add_separator()
 		fileMenu.add_command(label="Exit", command=self.close)
 		menubar.add_cascade(label="File", underline=0, menu=fileMenu)
@@ -98,13 +115,20 @@ class SerialConsole(tkDialog):
 
 		editMenu = tk.Menu(menubar, tearoff=False)
 		editMenu.add_command(label="Reset", command=self.reset)
-		editMenu.add_command(label="Setup", command=self.setupPort)
-		editMenu.add_command(label="Window", command=self.setupWindow)
-		editMenu.add_command(label="Advanced", command=self.setupTerminal)
 		menubar.add_cascade(label="Edit", underline=0, menu=editMenu)
+
+		setupMenu = tk.Menu(menubar, tearoff=False)
+		setupMenu.add_command(label="Setup", command=self.setupPort)
+		setupMenu.add_command(label="Window", command=self.setupWindow)
+		setupMenu.add_command(label="Advanced", command=self.setupTerminal)
+		menubar.add_cascade(label="Setup", underline=0, menu=setupMenu)
 		self.bind_all("<Control-r>", self.reset)
 		self.bind_all("<Control-o>", self.setupPort)
 		self.bind_all("<Control-t>", self.setupWindow)
+
+		helpMenu = tk.Menu(menubar, tearoff=False)
+		helpMenu.add_command(label="About", command=self.about)
+		menubar.add_cascade(label="Help", underline=0, menu=helpMenu)
 
 		# Text Box
 		self.cmdvar = tk.StringVar()
@@ -182,19 +206,27 @@ class SerialConsole(tkDialog):
 		for key, value in kwargs.items():
 			self[key] = value
 
+	def about(self, event=None):
+		new = tk.Toplevel(self.master)
+		About(new)
+
 	def logConsole(self, event=None):
 		if(self.logfile == None) :
-			self.new = tk.Toplevel(self.master)
-			LogSetup(self.new)
+			new = tk.Toplevel(self.master)
+			LogSetup(new)
 		else:
 			pass
 
 	def newConsole(self, event=None):
-		self.new = tk.Toplevel(self.master)
-		st = NewSetup(self.new).settings()
+		new = tk.Toplevel(self.master)
+		st = NewSetup(new).settings()
 		if(debugOn) : print("SETTINGS: ", st)
 		if(self.logfile != None) : self.logConsole()
-		#self.setupSerial(*st)
+		if(self.windower == None) :
+			new = tk.Toplevel(self.master)
+			SerialConsole(new, comport = st[0], baud = st[1])
+		else:
+			self.windower.add(comport = st[0], baud = st[1])
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -205,7 +237,6 @@ class SerialConsole(tkDialog):
 		self.text.configure(bg = COLORS[self.index])
 		self.index += 1
 		self.text.configure(state="disabled")
-		self.after(2000, self.recv)
 
 	def send(self, event=None):
 		if(debugOn) : print(self.cmdvar.get())
@@ -218,21 +249,22 @@ class SerialConsole(tkDialog):
 				 parity="N", stop=1, xonxoff=None, rtscts=None):
 		if(self.serial.handle.isOpen()) : self.serial.close()
 		#self.setupSerial(*st)
+		self.title("tkTerm COM")
 
 	def setupPort(self, event=None):
-		self.new = tk.Toplevel(self.master)
-		st = PortSetup(self.new).settings()
+		new = tk.Toplevel(self.master)
+		st = PortSetup(new).settings()
 		if(debugOn) : print("PORTSETTINGS: ", st)
 		#self.setupSerial(*st)
 
 	def setupTerminal(self, event=None):
-		self.new = tk.Toplevel(self.master)
-		st = TerminalSetup(self.new).settings()
+		new = tk.Toplevel(self.master)
+		st = TerminalSetup(new).settings()
 		if(debugOn) : print("TERMINALSETTINGS: ", st)
 
 	def setupWindow(self, event=None):
-		self.new = tk.Toplevel(self.master)
-		ret = TerminalSetup(self.new, self.winset).settings()
+		new = tk.Toplevel(self.master)
+		ret = WindowSetup(new).settings()
 		if(ret != None) :
 			self.winset = ret
 			if(debugOn) : print("WINDOWSETTINGS: ", self.winset)
@@ -280,6 +312,7 @@ class SerialConsole(tkDialog):
 			self.cmdentry.insert("end", self.strpaste[0:index])
 			self.strpaste = self.strpaste[index+1:]
 			self.send()
+			time.sleep(0.01)
 			index = self.strpaste.find('\n')
 		if(len(self.strpaste)) : self.cmdentry.insert("end", self.strpaste)
 
@@ -341,18 +374,17 @@ class SerialApp(threading.Thread):
 		c.master.title("tkTerm Console v%s" % VERSION)
 		self.root.mainloop()
 
-def start_new_console():
+def start_master():
 	root = tk.Tk()
-	app = NewSetup(root)
-	#app.dict["console"] = app
+	app = tkTermMaster(root)
 	app.pack(fill=tk.BOTH, expand=1)
-	app.master.title("tkTerm v%s" % VERSION)
+	#app.master.title("tkTerm v%s" % VERSION)
+	#root.after(1000, app.recv)
 	tk.mainloop()
 
 def start_console():
 	root = tk.Tk()
 	app = SerialConsole(root)
-	#app.dict["console"] = app
 	app.pack(fill=tk.BOTH, expand=1)
 	#app.master.title("tkTerm v%s" % VERSION)
 	#root.after(1000, app.recv)
@@ -360,4 +392,5 @@ def start_console():
 
 		
 if __name__ == "__main__":
-	start_console()
+	#start_console()
+	start_master()

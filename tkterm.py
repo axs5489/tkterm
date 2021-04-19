@@ -73,7 +73,13 @@ class tkTermMaster(tkDialog):
 		self.windows.append(tk.Toplevel(self.master))
 		self.consoles.append(SerialConsole(self.windows[-1], self, st))
 
+	def remove(self, window):
+		index = self.windows.index(window)
+		self.windows.pop(index)
+		self.consoles.pop(index)
+
 	def recv(self, **st):
+		if(self.windows == []) : self.close()
 		for c in self.consoles:
 			c.recv()
 		self.after(500, self.recv)

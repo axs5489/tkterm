@@ -11,7 +11,6 @@ try:
 except ImportError:
 	import tkinter as tk
 from tkinter import font, ttk
-from tkcolors import SIMPLE_COLORS
 from win import listSerialPorts
 
 
@@ -21,6 +20,28 @@ SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
 FONTS = ['Arial', 'Calibri', 'Cambria', 'Comic Sans', 'Courier', 'Georgia', 'Helvetica', 'Impact', 'Ink Free', 'Terminal', 'Times', 'Verdana']
 SIZES = list(range(10,20))
 WEIGHT = ['normal', 'bold']
+SIMPLE_COLORS__ = ['white', 'burlywood1', 'light salmon', 'burlywood4', 'sienna',
+				 'light yellow', 'darkolivegreen1', 'darkslategray1', 'darkslategray1', 'orchid',
+	'gray80', 'burlywood', 'tomato', 'mint cream', 'azure',
+	'light goldenrod yellow', 'lavender', 'lavender blush', 'cyan', 'orchid3',
+		'gray60', 'burlywood4', 'red', 'orange red', 'orange',
+		'yellow', 'yellow green', 'cornflower blue', 'dark slate blue', 'MediumOrchid',
+	'gray40', 'sienna', 'red3', 'orangered2', 'dark orange',
+	'gold', 'sea green', 'medium sea green', 'blue2', 'dark violet',
+		'black', 'OrangeRed4', 'maroon', 'OrangeRed3', 'dark orange3',
+		'gold3', 'dark green', 'gold', 'blue4', 'purple']
+
+SIMPLE_COLORS = ['white', 'light grey', 'gray60', 'gray40', 'black',
+ 'burlywood1', 'burlywood', 'burlywood4', 'sienna', 'OrangeRed4',
+ 'light salmon', 'tomato', 'firebrick1', 'red2', 'red4',
+ 'burlywood4', 'chocolate1', 'orange red', 'orangered2', 'OrangeRed3',
+ 'sandy brown', '#ffb04f', 'orange', '#ff8c00','dark orange3',
+
+ 'lemon chiffon', '#ffff64', 'yellow', 'gold','dark goldenrod',
+ 'SeaGReen1', 'lavender', 'SeaGReen3', 'medium sea green', 'chartreuse4',
+ 'cyan', 'cyan3', 'cornflower blue', 'sea green', 'dark green',
+ 'sky blue', 'steelblue2', 'royal blue', 'blue2', 'medium blue',
+ 'orchid', 'orchid3', 'MediumOrchid', 'dark violet', 'purple']
 
 
 class tkDialog(tk.Frame):
@@ -266,8 +287,9 @@ class WindowSetup(tkDialog):
 
 		for r in range(5):
 			for c in range(10):
-				index = 10*r + c
+				index = r + 5*c
 				#print(index)
+				#print(SIMPLE_COLORS[index])
 				button = tk.Button(self, bg = SIMPLE_COLORS[index], width =2,
 						 command=lambda i=index: self.updateRGBpreset(i))
 				button.grid(row=5+r, column=c+1, pady=5)
@@ -292,6 +314,13 @@ class WindowSetup(tkDialog):
 		if(debugOn) : print(self.tksettings[self.active + 2])
 		self.updateScales()
 
+	def updateFont(self, event=None):
+		#if(debugOn) : print('Font ', self.v_font.get(), self.v_size.get(), self.v_weight.get())
+		self.tksettings[0] = self.v_font.get()
+		self.tksettings[1] = int(self.v_size.get())
+		self.tksettings[2] = self.v_weight.get()
+		self.sample.configure(font = self.tksettings[0:3])
+
 	def updateSample(self):
 		self.sample.configure(fg = '#%02x%02x%02x'%(self.tksettings[3]))
 		self.sample.configure(bg = '#%02x%02x%02x'%(self.tksettings[4]))
@@ -306,19 +335,14 @@ class WindowSetup(tkDialog):
 									self.green.get(), self.blue.get())
 		self.updateSample()
 
-	def updateFont(self, event=None):
-		if(debugOn) : print('Font ', self.v_font.get(), self.v_size.get(), self.v_weight.get())
-		self.tksettings[0] = self.v_font.get()
-		self.tksettings[1] = int(self.v_size.get())
-		self.tksettings[2] = self.v_weight.get()
-		self.sample.configure(font = self.tksettings[0:3])
-
 	def updateRGBpreset(self, index):
 		colorname = SIMPLE_COLORS[index]
-		color = self.winfo_rgb(colorname)
-		self.red.scale.set(color[0]/256)
-		self.green.scale.set(color[1]/256)
-		self.blue.scale.set(color[2]/256)
+		color = tuple(int(v/256) for v in self.winfo_rgb(colorname))
+		if(debugOn) : print('#%02x%02x%02x'% color)
+		self.red.scale.set(color[0])
+		self.green.scale.set(color[1])
+		self.blue.scale.set(color[2])
+
 		if(self.active == 1):
 			self.sample.configure(fg = colorname)
 		elif(self.active == 2):
@@ -335,7 +359,7 @@ class WindowSetup(tkDialog):
 
 		
 if __name__ == '__main__':
-	test = 4
+	test = 5
 	root = tk.Tk()
 	#print(font.families())
 	if(test == 1) :

@@ -84,6 +84,11 @@ class tkTermMaster(tkDialog):
 			c.recv()
 		self.after(500, self.recv)
 
+class tkTermNotebook(tkDialog):
+	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
+		tkDialog.__init__(self, master)
+		self.consoles = [SerialConsole(self)]
+
 class SerialConsole(tkDialog):
 	def __init__(self, master=None, windower = None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
@@ -115,26 +120,27 @@ class SerialConsole(tkDialog):
 		fileMenu.add_separator()
 		fileMenu.add_command(label="Exit", command=self.close)
 		menubar.add_cascade(label="File", underline=0, menu=fileMenu)
-		self.bind_all("<Control-n>", self.newConsole)
-		self.bind_all("<Control-l>", self.logConsole)
-		self.bind_all("<Control-q>", self.close)
 
 		editMenu = tk.Menu(menubar, tearoff=False)
 		editMenu.add_command(label="Reset", command=self.reset)
 		menubar.add_cascade(label="Edit", underline=0, menu=editMenu)
 
 		setupMenu = tk.Menu(menubar, tearoff=False)
-		setupMenu.add_command(label="Setup", command=self.setupPort)
+		setupMenu.add_command(label="Serial Port", command=self.setupPort)
+		setupMenu.add_command(label="Terminal", command=self.setupTerminal)
 		setupMenu.add_command(label="Window", command=self.setupWindow)
-		setupMenu.add_command(label="Advanced", command=self.setupTerminal)
 		menubar.add_cascade(label="Setup", underline=0, menu=setupMenu)
-		self.bind_all("<Control-r>", self.reset)
-		self.bind_all("<Control-o>", self.setupPort)
-		self.bind_all("<Control-t>", self.setupWindow)
 
 		helpMenu = tk.Menu(menubar, tearoff=False)
 		helpMenu.add_command(label="About", command=self.about)
 		menubar.add_cascade(label="Help", underline=0, menu=helpMenu)
+
+		self.bind_all("<Control-n>", self.newConsole)
+		self.bind_all("<Control-l>", self.logConsole)
+		self.bind_all("<Control-q>", self.close)
+		self.bind_all("<Control-r>", self.reset)
+		self.bind_all("<Control-o>", self.setupPort)
+		self.bind_all("<Control-t>", self.setupWindow)
 
 		# Text Box
 		self.cmdvar = tk.StringVar()
@@ -227,12 +233,15 @@ class SerialConsole(tkDialog):
 		new = tk.Toplevel(self.master)
 		st = NewSetup(new).settings()
 		if(debugOn) : print("SETTINGS: ", st)
-		if(self.logfile != None) : self.logConsole()
-		if(self.windower == None) :
-			new = tk.Toplevel(self.master)
-			SerialConsole(new, comport = st[0], baud = st[1])
-		else:
-			self.windower.add(comport = st[0], baud = st[1])
+		if(st != None) :
+			if(self.logfile != None) : self.logConsole()
+			if(isinstance(self.windower, tkTermMaster())) :
+				self.windower.add(comport = st[0], baud = st[1])
+			elif(isinstance(self.windower, tkTermNotebook())) :
+				self.windower.add(comport = st[0], baud = st[1])
+			else:
+				new = tk.Toplevel(self.master)
+				SerialConsole(new, comport = st[0], baud = st[1])
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")

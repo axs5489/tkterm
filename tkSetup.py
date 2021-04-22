@@ -20,28 +20,18 @@ SPEEDS = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400,
 FONTS = ['Arial', 'Calibri', 'Cambria', 'Comic Sans', 'Courier', 'Georgia', 'Helvetica', 'Impact', 'Ink Free', 'Terminal', 'Times', 'Verdana']
 SIZES = list(range(10,20))
 WEIGHT = ['normal', 'bold']
-SIMPLE_COLORS__ = ['white', 'burlywood1', 'light salmon', 'burlywood4', 'sienna',
-				 'light yellow', 'darkolivegreen1', 'darkslategray1', 'darkslategray1', 'orchid',
-	'gray80', 'burlywood', 'tomato', 'mint cream', 'azure',
-	'light goldenrod yellow', 'lavender', 'lavender blush', 'cyan', 'orchid3',
-		'gray60', 'burlywood4', 'red', 'orange red', 'orange',
-		'yellow', 'yellow green', 'cornflower blue', 'dark slate blue', 'MediumOrchid',
-	'gray40', 'sienna', 'red3', 'orangered2', 'dark orange',
-	'gold', 'sea green', 'medium sea green', 'blue2', 'dark violet',
-		'black', 'OrangeRed4', 'maroon', 'OrangeRed3', 'dark orange3',
-		'gold3', 'dark green', 'gold', 'blue4', 'purple']
 
 SIMPLE_COLORS = ['white', 'light grey', 'gray60', 'gray40', 'black',
- 'burlywood1', 'burlywood', 'burlywood4', 'sienna', 'OrangeRed4',
- 'light salmon', 'tomato', 'firebrick1', 'red2', 'red4',
- 'burlywood4', 'chocolate1', 'orange red', 'orangered2', 'OrangeRed3',
- 'sandy brown', '#ffb04f', 'orange', '#ff8c00','dark orange3',
+ '#ffdcaa', 'burlywood', 'burlywood4', 'sienna', 'OrangeRed4',
+ '#ffb8b0', '#ff8080', '#ff4040', '#ff0000', 'red3',
+ '#ffc8a0', '#ffa06e', '#ff8040', '#ff5c00', 'OrangeRed3',
+ 'burlywood1', '#ffbe55', '#ffb420', '#ff8c00','dark orange3',
 
- 'lemon chiffon', '#ffff64', 'yellow', 'gold','dark goldenrod',
- 'SeaGReen1', 'lavender', 'SeaGReen3', 'medium sea green', 'chartreuse4',
- 'cyan', 'cyan3', 'cornflower blue', 'sea green', 'dark green',
- 'sky blue', 'steelblue2', 'royal blue', 'blue2', 'medium blue',
- 'orchid', 'orchid3', 'MediumOrchid', 'dark violet', 'purple']
+ '#ffffc0', '#ffff80', 'yellow', 'gold','#c8a000',
+ '#aaffc8', 'SeaGReen1', 'SeaGReen3', 'chartreuse4', 'dark green',
+ '#a0ffff', '#6affff', 'cyan', 'cyan3', '#0064a0',
+ '#a0dcff', '#80c0ff', '#4060ff', 'blue2', 'dark blue',
+ '#e6c8e6', '#d896d8', 'MediumOrchid', 'dark violet', 'purple']
 
 
 class tkDialog(tk.Frame):

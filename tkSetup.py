@@ -213,15 +213,22 @@ class TerminalSetup(tkDialog):
 		self.master.geometry('430x460')
 		self.master.resizable(False, False)
 
+	def settings(self):
+		self.master.deiconify()
+		self.master.wait_window()
+		if(self.returnNone) : return None
+		t = tuple(self.tksettings)
+		if(debugOn) : print(t)
+		return t
+
 
 class WindowSetup(tkDialog):
 	def __init__(self, master=None,
 			   st=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
-		self.master.wm_title('tkTerm Terminal Settings')
+		self.master.wm_title('tkTerm Window Settings')
 		self.master.geometry('430x460')
 		self.master.resizable(False, False)
-		self.types = [str, int, int, str, int, str]
 		self.tksettings = list(st)
 		self.tksettings.append((0, 0, 0))
 		self.tksettings.append((255, 255, 255))

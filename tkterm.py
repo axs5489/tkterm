@@ -270,7 +270,7 @@ class SerialConsole(tkDialog):
 
 	def setupWindow(self, event=None):
 		new = tk.Toplevel(self.master)
-		ret = WindowSetup(new).settings()
+		ret = WindowSetup(new, st = self.winset).settings()
 		if(ret != None) :
 			self.winset = ret
 			if(debugOn) : print("WINDOWSETTINGS: ", self.winset)

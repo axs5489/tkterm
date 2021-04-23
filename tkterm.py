@@ -31,6 +31,8 @@ import win32clipboard
 REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
 
+exitFlag = 0
+print(exitFlag)
 DEFAULT = ('Courier', 14, 'normal', (0, 0, 0), (255, 255, 255))
 
 class OutputPipe:
@@ -74,15 +76,27 @@ class tkTermMaster(tkDialog):
 		self.consoles.append(SerialConsole(self.windows[-1], self, st))
 
 	def remove(self, window):
-		index = self.windows.index(window)
-		self.windows.pop(index)
-		self.consoles.pop(index)
+		global exitFlag
+		ind = self.windows.index(window)
+		print("WINDOWER REMOVING INDEX", ind)
+		self.windows.pop(ind)
+		self.consoles.pop(ind)
+		if(self.windows == []) : exitFlag = 1
 
 	def recv(self, **st):
-		if(self.windows == []) : self.close()
+		global exitFlag
+		print("FLAG", exitFlag)
+		if(st):
+			for k,v in enumerate(*st): print(k,v)
+		#print("WIN", self.windows)
+		#print("CON", self.consoles)
+
+		if(exitFlag == 1) :
+			exitFlag = 0
+			self.close()
 		for c in self.consoles:
 			c.recv()
-		self.after(500, self.recv)
+		self.after(1000, self.recv)
 
 class tkTermNotebook(tkDialog):
 	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
@@ -222,6 +236,14 @@ class SerialConsole(tkDialog):
 		new = tk.Toplevel(self.master)
 		About(new)
 
+	def close(self, event=None):
+		if(isinstance(self.windower, tkTermMaster)):
+			print("Windower Master Removal")
+			self.windower.remove(self.master)
+		elif(isinstance(self.windower, tkTermNotebook)):
+			self.windower.remove(self.master)
+		self.master.destroy()
+
 	def logConsole(self, event=None):
 		if(self.logfile == None) :
 			new = tk.Toplevel(self.master)
@@ -235,9 +257,9 @@ class SerialConsole(tkDialog):
 		if(debugOn) : print("SETTINGS: ", st)
 		if(st != None) :
 			if(self.logfile != None) : self.logConsole()
-			if(isinstance(self.windower, tkTermMaster())) :
+			if(isinstance(self.windower, tkTermMaster)) :
 				self.windower.add(comport = st[0], baud = st[1])
-			elif(isinstance(self.windower, tkTermNotebook())) :
+			elif(isinstance(self.windower, tkTermNotebook)) :
 				self.windower.add(comport = st[0], baud = st[1])
 			else:
 				new = tk.Toplevel(self.master)
@@ -389,14 +411,6 @@ class SerialApp(threading.Thread):
 		c.master.title("tkTerm Console v%s" % VERSION)
 		self.root.mainloop()
 
-def start_master():
-	root = tk.Tk()
-	app = tkTermMaster(root)
-	app.pack(fill=tk.BOTH, expand=1)
-	#app.master.title("tkTerm v%s" % VERSION)
-	#root.after(1000, app.recv)
-	tk.mainloop()
-
 def start_console():
 	root = tk.Tk()
 	app = SerialConsole(root)
@@ -405,7 +419,24 @@ def start_console():
 	#root.after(1000, app.recv)
 	tk.mainloop()
 
+def start_master():
+	root = tk.Tk()
+	app = tkTermMaster(root)
+	app.pack(fill=tk.BOTH, expand=1)
+	#app.master.title("tkTerm v%s" % VERSION)
+	root.after(2000, app.recv)
+	tk.mainloop()
+
+def start_notebook():
+	root = tk.Tk()
+	app = tkTermNotebook(root)
+	app.pack(fill=tk.BOTH, expand=1)
+	#app.master.title("tkTerm v%s" % VERSION)
+	root.after(1000, app.recv)
+	tk.mainloop()
+
 		
 if __name__ == "__main__":
 	#start_console()
 	start_master()
+	#start_notebook()

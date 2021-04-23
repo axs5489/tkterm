@@ -38,6 +38,7 @@ class tkDialog(tk.Frame):
 	def __init__(self, master=None, **kwargs):
 		tk.Frame.__init__(self, master)
 		self.master = master
+		self.master.protocol("WM_DELETE_WINDOW", self.close)
 		self.pack(fill=tk.BOTH, expand=1)
 		self.returnNone = True 		# Return nothing on close by default
 

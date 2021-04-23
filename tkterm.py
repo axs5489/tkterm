@@ -32,7 +32,6 @@ REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
 
 exitFlag = 0
-print(exitFlag)
 DEFAULT = ('Courier', 14, 'normal', (0, 0, 0), (255, 255, 255))
 
 class OutputPipe:
@@ -78,18 +77,15 @@ class tkTermMaster(tkDialog):
 	def remove(self, window):
 		global exitFlag
 		ind = self.windows.index(window)
-		print("WINDOWER REMOVING INDEX", ind)
+		if(debugOn) : print("WINDOWER REMOVING INDEX", ind)
 		self.windows.pop(ind)
 		self.consoles.pop(ind)
 		if(self.windows == []) : exitFlag = 1
 
 	def recv(self, **st):
 		global exitFlag
-		print("FLAG", exitFlag)
-		if(st):
+		if(st and debugOn):
 			for k,v in enumerate(*st): print(k,v)
-		#print("WIN", self.windows)
-		#print("CON", self.consoles)
 
 		if(exitFlag == 1) :
 			exitFlag = 0
@@ -238,7 +234,6 @@ class SerialConsole(tkDialog):
 
 	def close(self, event=None):
 		if(isinstance(self.windower, tkTermMaster)):
-			print("Windower Master Removal")
 			self.windower.remove(self.master)
 		elif(isinstance(self.windower, tkTermNotebook)):
 			self.windower.remove(self.master)

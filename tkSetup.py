@@ -115,11 +115,13 @@ class NewSetup(tkDialog):
 	def refresh(self):
 		global PORTS
 		PORTS = []
-		p = listSerialPorts()
-		if(p == []) :
+		pl = listSerialPorts()
+		print(pl)
+		if(pl == []) :
 			PORTS.append('COM1')
 		else:
-			PORTS.append(p)
+			for p in pl : PORTS.append(p)
+		print("GLOBAL PORTS: ", PORTS)
 		self.portsel['values'] = PORTS
 		self.port.set(PORTS[0])
 
@@ -180,11 +182,12 @@ class PortSetup(tkDialog):
 	def refresh(self):
 		global PORTS
 		PORTS = []
-		p = listSerialPorts()
-		if(p == []) :
+		pl = listSerialPorts()
+		if(pl == []) :
 			PORTS.append('COM1')
 		else:
-			PORTS.append(p)
+			for p in pl : PORTS.append(p)
+		print("GLOBAL PORTS: ", PORTS)
 		self.boxes[0]['values'] = PORTS
 		self.vars[0].set(PORTS[0])
 
@@ -357,7 +360,7 @@ class WindowSetup(tkDialog):
 
 		
 if __name__ == '__main__':
-	test = 5
+	test = 2
 	root = tk.Tk()
 	#print(font.families())
 	if(test == 1) :

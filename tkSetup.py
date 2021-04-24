@@ -49,6 +49,16 @@ class tkDialog(tk.Frame):
 	def close(self, event=None):
 		self.master.destroy()
 
+def refreshPorts():
+	global PORTS
+	PORTS = []
+	pl = listSerialPorts()
+	print(pl)
+	if(pl == []) :
+		PORTS.append('COM1')
+	else:
+		for p in pl : PORTS.append(p)
+	print("GLOBAL PORTS: ", PORTS)
 
 class ColorScale(tk.Frame):
 	def __init__(self, master=None, name='', **kwargs):
@@ -84,7 +94,7 @@ class About(tkDialog):
 
 class NewSetup(tkDialog):
 	YBUT = 100
-	def __init__(self, master=None, **kwargs):
+	def __init__(self, master=None, iv = None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('New Console Settings')
 		self.master.geometry('230x150')
@@ -114,14 +124,8 @@ class NewSetup(tkDialog):
 
 	def refresh(self):
 		global PORTS
-		PORTS = []
-		pl = listSerialPorts()
-		print(pl)
-		if(pl == []) :
-			PORTS.append('COM1')
-		else:
-			for p in pl : PORTS.append(p)
-		print("GLOBAL PORTS: ", PORTS)
+		refreshPorts()
+		print("REFRESHED", PORTS)
 		self.portsel['values'] = PORTS
 		self.port.set(PORTS[0])
 
@@ -129,7 +133,7 @@ class NewSetup(tkDialog):
 		self.master.deiconify()
 		self.master.wait_window()
 		if(self.returnNone) : return None
-		t = (self.port.get()[2:-3], int(self.speed.get()))
+		t = (self.port.get(), int(self.speed.get()))
 		if(debugOn) : print(t)
 		return t
 
@@ -143,7 +147,7 @@ class PortSetup(tkDialog):
 	PARITY = ['none', 'odd', 'even', 'mark', 'space']
 	STOP = ['1 bit', '2 bit']
 	FLOW = ['none', 'Xon/Xoff', 'RTS/CTS', 'DSR/DTR']
-	def __init__(self, master=None, **kwargs):
+	def __init__(self, master=None, iv = None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('Serial Port Setup')
 		self.master.geometry('230x250')
@@ -153,13 +157,24 @@ class PortSetup(tkDialog):
 		self.vars = [None, None, None, None, None, None]
 		self.boxes = [None, None, None, None, None, None]
 		self.types = [str, int, int, str, int, str]
+		self.optionlabels = ['Port:', 'Speed:', 'Data:', 'Parity:', 'Stop bits:', 'Flow control:']
+		self.listsource = [PORTS, SPEEDS, self.DATA, self.PARITY, self.STOP, self.FLOW]
+		self.heights = [20, 50, 80, 110, 140, 170]
+		refreshPorts()
+		if(iv == None):
+			self.defaults = (0, 11, 1, 0, 0, 0)
+		else:
+			self.defaults = tuple(self.listsource[i].index(v) for i,v in enumerate(iv))
 
-		self.addOption('Port:', PORTS, 20)
-		self.addOption('Speed:', SPEEDS, 50, 11)
-		self.addOption('Data:', self.DATA, 80, 1)
-		self.addOption('Parity:', self.PARITY, 110)
-		self.addOption('Stop bits:', self.STOP, 140)
-		self.addOption('Flow control:', self.FLOW, 170)
+		for i,o in enumerate(self.optionlabels) :
+			self.addOption(o, self.listsource[i], self.heights[i], self.defaults[i])
+# 		self.addOption('Port:', PORTS, 20)
+# 		self.addOption('Speed:', SPEEDS, 50, 11)
+# 		self.addOption('Data:', self.DATA, 80, 1)
+# 		self.addOption('Parity:', self.PARITY, 110)
+# 		self.addOption('Stop bits:', self.STOP, 140)
+# 		self.addOption('Flow control:', self.FLOW, 170)
+		print(self.boxes)
 		self.refresh()
 
 		self.b_cancel = tk.Button(self, text = 'Cancel', command = self.close, width = 6)
@@ -181,13 +196,8 @@ class PortSetup(tkDialog):
 
 	def refresh(self):
 		global PORTS
-		PORTS = []
-		pl = listSerialPorts()
-		if(pl == []) :
-			PORTS.append('COM1')
-		else:
-			for p in pl : PORTS.append(p)
-		print("GLOBAL PORTS: ", PORTS)
+		refreshPorts()
+		print("REFRESHED", PORTS)
 		self.boxes[0]['values'] = PORTS
 		self.vars[0].set(PORTS[0])
 
@@ -203,7 +213,7 @@ class PortSetup(tkDialog):
 
 
 class LogSetup(tkDialog):
-	def __init__(self, master=None, **kwargs):
+	def __init__(self, master=None, iv = None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('tkTerm Log Setup')
 		self.master.geometry('400x600')
@@ -211,7 +221,7 @@ class LogSetup(tkDialog):
 
 
 class TerminalSetup(tkDialog):
-	def __init__(self, master=None, **kwargs):
+	def __init__(self, master=None, iv = None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('tkTerm Terminal Settings')
 		self.master.geometry('430x460')
@@ -228,12 +238,12 @@ class TerminalSetup(tkDialog):
 
 class WindowSetup(tkDialog):
 	def __init__(self, master=None,
-			   st=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
+			   iv=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('tkTerm Window Settings')
 		self.master.geometry('430x460')
 		self.master.resizable(False, False)
-		self.tksettings = list(st)
+		self.tksettings = list(iv)
 		self.tksettings.append((0, 0, 0))
 		self.tksettings.append((255, 255, 255))
 

@@ -11,7 +11,6 @@ implied warranty. Permission to use, modify, or distribute the software
 for any purpose is hereby granted."""
 
 debugOn = True
-debugSerial = False
 try:
 	import Tkinter as tk
 except ImportError:
@@ -22,6 +21,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkcolors import COLORS
 from tkSetup import tkDialog, About, LogSetup, NewSetup, PortSetup, TerminalSetup, WindowSetup
 from SerialPort import SerialPort
+from win import listSerialPorts
 from idlelib.redirector import WidgetRedirector
 import serial
 import threading
@@ -60,8 +60,8 @@ class ReadOnlyScrolledText(ScrolledText):
 	def __init__(self, master=None, **kwargs):
 		ScrolledText.__init__(self, master, **kwargs)
 		self.redirector = WidgetRedirector(self)
-		self.insert = self.redirector.register("insert", lambda *args, **kw: "break")
-		self.delete = self.redirector.register("delete", lambda *args, **kw: "break")
+		self.insert = self.redirector.register("insert", lambda *args, **kwargs: "break")
+		self.delete = self.redirector.register("delete", lambda *args, **kwargs: "break")
 
 class tkTermMaster(tkDialog):
 	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
@@ -95,19 +95,21 @@ class tkTermMaster(tkDialog):
 		self.after(1000, self.recv)
 
 class tkTermNotebook(tkDialog):
-	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
+	def __init__(self, master=None, comport = None, baud = 115200, bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
 		self.consoles = [SerialConsole(self)]
 
 class SerialConsole(tkDialog):
-	def __init__(self, master=None, windower = None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
+	def __init__(self, master=None, windower = None, comport = None, baud = 115200,
+			bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.geometry("513x714")
 		self.master.resizable(False, False)
 		self.windower = windower
-		self.pad = 3
-		self.MAX_WIDTH = master.winfo_screenwidth() - self.pad
-		self.MAX_HEIGHT = master.winfo_screenheight() - self.pad
+		if(comport == None):
+			comport = listSerialPorts()[0]
+		self.portset = ('COM1', '115200', '8 bit', 'none', '1 bit', 'none')
+		self.termset = [True, '80x80']
 		self.winset = DEFAULT
 		self.index = 0
 
@@ -124,8 +126,8 @@ class SerialConsole(tkDialog):
 		self.master.config(menu=menubar)
 
 		fileMenu = tk.Menu(menubar, tearoff=False)
-		fileMenu.add_command(label="New", command=self.newConsole)#, accelerator ="")
-		fileMenu.add_command(label="Log", command=self.logConsole)
+		fileMenu.add_command(label="New", command=self.setNew)#, accelerator ="")
+		fileMenu.add_command(label="Log", command=self.setLog)
 		fileMenu.add_command(label="Send file", command=self.sendfile)
 		fileMenu.add_separator()
 		fileMenu.add_command(label="Exit", command=self.close)
@@ -136,21 +138,22 @@ class SerialConsole(tkDialog):
 		menubar.add_cascade(label="Edit", underline=0, menu=editMenu)
 
 		setupMenu = tk.Menu(menubar, tearoff=False)
-		setupMenu.add_command(label="Serial Port", command=self.setupPort)
-		setupMenu.add_command(label="Terminal", command=self.setupTerminal)
-		setupMenu.add_command(label="Window", command=self.setupWindow)
+		setupMenu.add_command(label="Serial Port", command=self.setPort)
+		setupMenu.add_command(label="Terminal", command=self.setTerminal)
+		setupMenu.add_command(label="Window", command=self.setWindow)
 		menubar.add_cascade(label="Setup", underline=0, menu=setupMenu)
 
 		helpMenu = tk.Menu(menubar, tearoff=False)
 		helpMenu.add_command(label="About", command=self.about)
 		menubar.add_cascade(label="Help", underline=0, menu=helpMenu)
 
-		self.bind_all("<Control-n>", self.newConsole)
-		self.bind_all("<Control-l>", self.logConsole)
+		self.bind_all("<Control-n>", self.setNew)
+		self.bind_all("<Control-l>", self.setLog)
 		self.bind_all("<Control-q>", self.close)
 		self.bind_all("<Control-r>", self.reset)
-		self.bind_all("<Control-o>", self.setupPort)
-		self.bind_all("<Control-t>", self.setupWindow)
+		self.bind_all("<Control-o>", self.setPort)
+		self.bind_all("<Control-t>", self.setTerminal)
+		self.bind_all("<Control-w>", self.setWindow)
 
 		# Text Box
 		self.cmdvar = tk.StringVar()
@@ -163,13 +166,13 @@ class SerialConsole(tkDialog):
 		self.text.bind("<ButtonRelease-1>", self.copy)
 		#self.text.bind("<Key>", lambda e: self.txtEvent(e))
 		#self.text.bind("<Return>", self.cb_return)
+		self.text.pack(fill=tk.BOTH, expand=1)
 		self.updateWindow()
 
 		# Scroll bar
 #		self.scroll = tk.Scrollbar(self, command=self.text.yview)
 #		self.text.config(yscrollcommand=self.scroll.set)
 #		self.scroll.pack(side=tk.RIGHT, fill=tk.Y)
-		self.text.pack(fill=tk.BOTH, expand=1)
 
 		# Command Entry Box
 		self.cmdentry = tk.Entry(self, textvariable = self.cmdvar)
@@ -184,19 +187,17 @@ class SerialConsole(tkDialog):
 		self.cmdentry.focus()
 
 		self.logfile = None
-		self.settings = ('COM1', '115200', '8 bit', 'none', '1 bit', 'none')
-		if(debugSerial):	#try:
-			if(isinstance(comport, str)):
+		try:
+			if(isinstance(comport, str) and comport in listSerialPorts()):
 				self.serial = SerialPort(comport, comport, asyncr=True)
 			elif(isinstance(comport, serial.Serial) or isinstance(comport, SerialPort)):
 				self.serial = comport
 			else:
 				pass
-		else:	#except Exception as e:
+		except Exception:
 			self.serial = []
-			#self.setupPort()
+			self.setPort()
 			#self.serial = SerialPort(comport, comport, asyncr=True)
-
 
 		# Configurable options.
 		self.options = {"stdoutcolour": "#7020c0",	#purple, print statements
@@ -205,7 +206,7 @@ class SerialConsole(tkDialog):
 						"badcolour": "#e0b0b0",		#pastel red
 						"runcolour": "#90d090"}		#pastel green, last python
 		#self.config(**self.options)
-		self.config(**kwargs)
+		#self.config(**kwargs)
 
 	def __getitem__(self, key):
 		return self.options[key]
@@ -233,32 +234,17 @@ class SerialConsole(tkDialog):
 		About(new)
 
 	def close(self, event=None):
+		self.closeSerial()
 		if(isinstance(self.windower, tkTermMaster)):
 			self.windower.remove(self.master)
 		elif(isinstance(self.windower, tkTermNotebook)):
 			self.windower.remove(self.master)
 		self.master.destroy()
 
-	def logConsole(self, event=None):
-		if(self.logfile == None) :
-			new = tk.Toplevel(self.master)
-			LogSetup(new)
-		else:
-			pass
-
-	def newConsole(self, event=None):
-		new = tk.Toplevel(self.master)
-		st = NewSetup(new).settings()
-		if(debugOn) : print("SETTINGS: ", st)
-		if(st != None) :
-			if(self.logfile != None) : self.logConsole()
-			if(isinstance(self.windower, tkTermMaster)) :
-				self.windower.add(comport = st[0], baud = st[1])
-			elif(isinstance(self.windower, tkTermNotebook)) :
-				self.windower.add(comport = st[0], baud = st[1])
-			else:
-				new = tk.Toplevel(self.master)
-				SerialConsole(new, comport = st[0], baud = st[1])
+	def closeSerial(self):
+		if(hasattr(self, "serial")) :
+			self.serial.close()
+			del self.serial
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -277,30 +263,65 @@ class SerialConsole(tkDialog):
 	def sendfile(self, event=None):
 		pass
 
-	def setupSerial(self, comport="COM1", baud=115200, data=8,
-				 parity="N", stop=1, xonxoff=None, rtscts=None):
-		if(self.serial.handle.isOpen()) : self.serial.close()
-		#self.setupSerial(*st)
-		self.title("tkTerm COM")
+	def setPopup(self, wincls, **kwargs):
+		winop = tk.Toplevel(self.master)
+		return wincls(winop, kwargs).settings()
 
-	def setupPort(self, event=None):
-		new = tk.Toplevel(self.master)
-		st = PortSetup(new).settings()
-		if(debugOn) : print("PORTSETTINGS: ", st)
-		#self.setupSerial(*st)
+	def setLog(self, event=None):
+		if(self.logfile == None) :
+			new = tk.Toplevel(self.master)
+			LogSetup(new)
+		else:
+			pass #TODO close log
 
-	def setupTerminal(self, event=None):
-		new = tk.Toplevel(self.master)
-		st = TerminalSetup(new).settings()
-		if(debugOn) : print("TERMINALSETTINGS: ", st)
+	def setNew(self, event=None):
+		ret = self.setPopup(NewSetup)
+		if(ret != None) :
+			#if(self.logfile != None) : self.setLog()
+			if(debugOn) : print("NEW: ", ret)
+			if(isinstance(self.windower, tkTermMaster)) :
+				self.windower.add(comport = ret[0], baud = ret[1])
+			elif(isinstance(self.windower, tkTermNotebook)) :
+				self.windower.add(comport = ret[0], baud = ret[1])
+			else:
+				new = tk.Toplevel(self.master)
+				SerialConsole(new, comport = ret[0], baud = ret[1])
 
-	def setupWindow(self, event=None):
-		new = tk.Toplevel(self.master)
-		ret = WindowSetup(new, st = self.winset).settings()
+	def setPort(self, event=None):
+		ret = self.setPopup(PortSetup, iv = self.portset)
+		if(ret != None) :
+			if(debugOn) : print("PORT: ", ret)
+			self.portset = ret
+			self.setupSerial()
+
+	def setTerminal(self, event=None):
+		ret = self.setPopup(TerminalSetup, iv = self.termsettings)
+		if(ret != None) :
+			if(debugOn) : print("NEW TERMINAL")
+			self.termsettings = ret
+
+	def setWindow(self, event=None):
+		ret = self.setPopup(WindowSetup, iv = self.winset)
 		if(ret != None) :
 			self.winset = ret
-			if(debugOn) : print("WINDOWSETTINGS: ", self.winset)
+			if(debugOn) : print("WINDOWSETTINGS: ", ret)
 			self.updateWindow()
+
+	def setupSerial(self, comport="COM1", baud=115200, data=8,par="N",
+				 stop=1, xon=None, rts=None, **kwargs):
+		self.closeSerial()
+		try:
+			comport, baud, data, par, stop, xon, rts = []
+			self.handle = SerialPort("tkTerm", comport, baud, data, par,
+							 stop, xon, rts)
+		except:
+			try:
+				self.handle = serial.Serial(port=comport, baudrate=baud,
+				bytesize=data, parity=par, stopbits=stop, timeout=3.0,
+				rtscts=rts, xonxoff=xon, writeTimeout=3.0)
+			except:
+				print("COM PORT ERROR!")
+		self.title("tkTerm COM")
 
 	def updateWindow(self):
 		self.text.configure(bg = '#%02x%02x%02x'%self.winset[4],
@@ -396,10 +417,6 @@ class SerialApp(threading.Thread):
 	def run(self):
 		self.root=tk.Tk()
 		self.root.protocol("WM_DELETE_WINDOW", self.callback)
-		self.strvar = tk.StringVar()
-		self.strvar.set('Foo')
-		l = tk.Label(self.root,textvariable=self.strvar)
-		l.pack()
 		c = SerialConsole(dict={})
 		c.dict["console"] = c
 		c.pack(fill=tk.BOTH, expand=1)
@@ -411,7 +428,7 @@ def start_console():
 	app = SerialConsole(root)
 	app.pack(fill=tk.BOTH, expand=1)
 	#app.master.title("tkTerm v%s" % VERSION)
-	#root.after(1000, app.recv)
+	root.after(1000, app.recv)
 	tk.mainloop()
 
 def start_master():

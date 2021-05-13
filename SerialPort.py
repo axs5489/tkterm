@@ -210,10 +210,10 @@ class SerialPort(object):
 		# If this port supports echo'ing of the sends, wait for the read-back
 		# before continuing.
 		if self.echos:
-			self.waitfor(sendStr.strip(),timeout,False,False)
+			self.waitFor(sendStr.strip(),timeout,False,False)
 
 		try:
-			return self.waitfor(waitStr,timeout,timeoutException,useRegex,caseSensitive)
+			return self.waitFor(waitStr,timeout,timeoutException,useRegex,caseSensitive)
 		except SerialPort.Timeout:
 			raise SerialPort.Timeout("SerialPortDevice.send_and_wait() timed out. Command: '%s', waited for: '%s'" % (sendStr, waitStr))
 		finally:

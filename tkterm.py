@@ -67,7 +67,7 @@ class tkTermMaster(tkDialog):
 	def __init__(self, master=None, comport = "COM1", baud = 115200, bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
 		self.windows = [tk.Toplevel(self.master)]
-		self.consoles = [SerialConsole(self.windows[-1], self)]
+		self.consoles = [SerialConsole(self.windows[-1], self, comport, **kwargs)]
 		self.master.withdraw()
 
 	def add(self, **st):
@@ -97,7 +97,7 @@ class tkTermMaster(tkDialog):
 class tkTermNotebook(tkDialog):
 	def __init__(self, master=None, comport = None, baud = 115200, bg="blue", **kwargs):
 		tkDialog.__init__(self, master)
-		self.consoles = [SerialConsole(self)]
+		self.consoles = [SerialConsole(self, comport = comport, **kwargs)]
 
 class SerialConsole(tkDialog):
 	def __init__(self, master=None, windower = None, comport = None, baud = 115200,
@@ -189,7 +189,7 @@ class SerialConsole(tkDialog):
 		self.logfile = None
 		try:
 			if(isinstance(comport, str) and comport in listSerialPorts()):
-				self.serial = SerialPort(comport, comport, asyncr=True)
+				self.setupSerial(comport, comport, asyncr=True)
 			elif(isinstance(comport, serial.Serial) or isinstance(comport, SerialPort)):
 				self.serial = comport
 			else:
@@ -299,6 +299,7 @@ class SerialConsole(tkDialog):
 		if(ret != None) :
 			if(debugOn) : print("NEW TERMINAL")
 			self.termsettings = ret
+			#TODO configure terminal
 
 	def setWindow(self, event=None):
 		ret = self.setPopup(WindowSetup, iv = self.winset)
@@ -307,22 +308,24 @@ class SerialConsole(tkDialog):
 			if(debugOn) : print("WINDOWSETTINGS: ", ret)
 			self.updateWindow()
 
-	def setupSerial(self, comport="COM1", baud=115200, data=8,par="N",
+	def setupSerial(self, comport="COM1", baud=115200, data=8, par="N",
 				 stop=1, xon=None, rts=None, **kwargs):
-		self.closeSerial()
-		try:
-			comport, baud, data, par, stop, xon, rts = []
+		if(comport in listSerialPorts()) :
+			self.closeSerial()
+			#try:
+				#comport, baud, data, par, stop, xon, rts = []
 			self.handle = SerialPort("tkTerm", comport, baud, data, par,
-							 stop, xon, rts)
-		except:
-			try:
-				self.handle = serial.Serial(port=comport, baudrate=baud,
-				bytesize=data, parity=par, stopbits=stop, timeout=3.0,
-				rtscts=rts, xonxoff=xon, writeTimeout=3.0)
-			except:
-				print("COM PORT ERROR!")
-		self.title("tkTerm COM")
-
+								 stop, xon, rts)
+# 			except Exception as e:
+# 				print("SERIAL PORT ERROR!", e)
+# 				try:
+# 					self.handle = serial.Serial(port=comport, baudrate=baud,
+# 					bytesize=data, parity=par, stopbits=stop, timeout=3.0,
+# 					rtscts=rts, xonxoff=xon, writeTimeout=3.0)
+# 				except Exception as se:
+# 					print("COM PORT ERROR!", se)
+			self.master.title("tkTerm {}".format(comport))
+	
 	def updateWindow(self):
 		self.text.configure(bg = '#%02x%02x%02x'%self.winset[4],
 					 fg = '#%02x%02x%02x'%self.winset[3],
@@ -433,7 +436,7 @@ def start_console():
 
 def start_master():
 	root = tk.Tk()
-	app = tkTermMaster(root)
+	app = tkTermMaster(root, comport = "COM35")
 	app.pack(fill=tk.BOTH, expand=1)
 	#app.master.title("tkTerm v%s" % VERSION)
 	root.after(2000, app.recv)

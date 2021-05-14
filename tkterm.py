@@ -32,7 +32,7 @@ REVISION = "$Revision: 1.0 $"
 VERSION = REVISION.split()[1]
 
 exitFlag = 0
-DEFAULT = ('Courier', 14, 'normal', (0, 0, 0), (255, 255, 255))
+DEFAULT = ('Courier', 12, 'normal', (0, 0, 0), (255, 255, 255))
 
 class OutputPipe:
 	"""A substitute file object for redirecting output to a function."""
@@ -189,15 +189,15 @@ class SerialConsole(tkDialog):
 		self.logfile = None
 		try:
 			if(isinstance(comport, str) and comport in listSerialPorts()):
-				self.setupSerial(comport, comport, asyncr=True)
+				self.setupSerial(comport)
 			elif(isinstance(comport, serial.Serial) or isinstance(comport, SerialPort)):
-				self.serial = comport
+				self.handle = comport
 			else:
 				pass
 		except Exception:
-			self.serial = []
+			self.handle = []
 			self.setPort()
-			#self.serial = SerialPort(comport, comport, asyncr=True)
+			#self.handle = SerialPort(comport, comport, asyncr=True)
 
 		# Configurable options.
 		self.options = {"stdoutcolour": "#7020c0",	#purple, print statements
@@ -242,9 +242,9 @@ class SerialConsole(tkDialog):
 		self.master.destroy()
 
 	def closeSerial(self):
-		if(hasattr(self, "serial")) :
-			self.serial.close()
-			del self.serial
+		if(hasattr(self, "handle")) :
+			self.handle.close()
+			del self.handle
 
 	def reset(self, event=None):
 		self.text.delete(1.0, "end")
@@ -254,14 +254,24 @@ class SerialConsole(tkDialog):
 		self.text.configure(state="normal")
 		self.text.configure(bg = COLORS[self.index])
 		self.index += 1
-		self.text.configure(state="disabled")
+		for line in self.handle.flush():
+			self.text.insert("end", line)
+			self.text.insert("end", "\n")
+		#self.text.configure(state="disabled")
+		self.text.configure(state="readonly")
 
 	def send(self, event=None):
-		if(debugOn) : print(self.cmdvar.get())
+		cmd = self.cmdvar.get()
+		if(debugOn) : print(cmd)
 		self.cmdentry.delete(0, len(self.cmdvar.get()))
+		if(hasattr(self, "handle")) :
+			if(cmd) :
+				self.handle.send(cmd)
+			else:
+				self.handle.send("\n")
 
 	def sendfile(self, event=None):
-		pass
+		pass #TODO
 
 	def setPopup(self, wincls, **kwargs):
 		winop = tk.Toplevel(self.master)
@@ -295,10 +305,10 @@ class SerialConsole(tkDialog):
 			self.setupSerial()
 
 	def setTerminal(self, event=None):
-		ret = self.setPopup(TerminalSetup, iv = self.termsettings)
+		ret = self.setPopup(TerminalSetup, iv = self.termset)
 		if(ret != None) :
 			if(debugOn) : print("NEW TERMINAL")
-			self.termsettings = ret
+			self.termset = ret
 			#TODO configure terminal
 
 	def setWindow(self, event=None):
@@ -325,6 +335,7 @@ class SerialConsole(tkDialog):
 # 				except Exception as se:
 # 					print("COM PORT ERROR!", se)
 			self.master.title("tkTerm {}".format(comport))
+			print(self.handle)
 	
 	def updateWindow(self):
 		self.text.configure(bg = '#%02x%02x%02x'%self.winset[4],

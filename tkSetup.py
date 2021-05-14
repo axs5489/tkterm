@@ -53,12 +53,11 @@ def refreshPorts():
 	global PORTS
 	PORTS = []
 	pl = listSerialPorts()
-	print(pl)
+	if(debugOn) : print(pl)
 	if(pl == []) :
 		PORTS.append('COM1')
 	else:
 		for p in pl : PORTS.append(p)
-	print("GLOBAL PORTS: ", PORTS)
 
 class ColorScale(tk.Frame):
 	def __init__(self, master=None, name='', **kwargs):
@@ -93,26 +92,26 @@ class About(tkDialog):
 
 
 class NewSetup(tkDialog):
-	YBUT = 100
+	YBUT = 90
 	def __init__(self, master=None, iv = None, **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('New Console Settings')
-		self.master.geometry('230x150')
+		self.master.geometry('230x140')
 		self.master.resizable(False, False)
-
+		
+		self.l_ports = tk.Label(self, text = 'Port(s):')
+		self.l_ports.place(x=30, y=20)
+		self.port = tk.StringVar()
+		self.portsel = ttk.Combobox(self, width=10, state='readonly',
+							values = PORTS, textvariable = self.port)
+		self.portsel.place(x=100, y=20)
 		self.l_speed = tk.Label(self, text = 'Speed:')
-		self.l_speed.place(x=30, y=20)
+		self.l_speed.place(x=30, y=50)
 		self.speed = tk.StringVar()
 		self.box = ttk.Combobox(self, width=10, state='readonly',
 							values = SPEEDS, textvariable = self.speed)
 		self.box.current(11)
-		self.box.place(x=100, y=20)
-		self.l_ports = tk.Label(self, text = 'Port(s):')
-		self.l_ports.place(x=30, y=50)
-		self.port = tk.StringVar()
-		self.portsel = ttk.Combobox(self, width=10, state='readonly',
-							values = PORTS, textvariable = self.port)
-		self.portsel.place(x=100, y=50)
+		self.box.place(x=100, y=50)
 		self.refresh()
 
 		self.b_cancel = tk.Button(self, text = 'Cancel', command = self.close, width = 6)
@@ -125,7 +124,7 @@ class NewSetup(tkDialog):
 	def refresh(self):
 		global PORTS
 		refreshPorts()
-		print("REFRESHED", PORTS)
+		if(debugOn) : print("REFRESHED", PORTS)
 		self.portsel['values'] = PORTS
 		self.port.set(PORTS[0])
 
@@ -238,7 +237,7 @@ class TerminalSetup(tkDialog):
 
 class WindowSetup(tkDialog):
 	def __init__(self, master=None,
-			   iv=('Courier', 14, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
+			   iv=('Courier', 12, 'normal', (0, 0, 0),(255, 255, 255)), **kwargs):
 		tkDialog.__init__(self, master)
 		self.master.wm_title('tkTerm Window Settings')
 		self.master.geometry('430x460')
@@ -368,9 +367,8 @@ class WindowSetup(tkDialog):
 		return t
 
 
-		
 if __name__ == '__main__':
-	test = 2
+	test = 5
 	root = tk.Tk()
 	#print(font.families())
 	if(test == 1) :

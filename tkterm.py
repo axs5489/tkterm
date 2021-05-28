@@ -92,7 +92,7 @@ class tkTermMaster(tkDialog):
 			self.close()
 		for c in self.consoles:
 			c.recv()
-		self.after(1000, self.recv)
+		self.after(500, self.recv)
 
 class tkTermNotebook(tkDialog):
 	def __init__(self, master=None, comport = None, baud = 115200, bg="blue", **kwargs):
@@ -188,6 +188,7 @@ class SerialConsole(tkDialog):
 
 		self.logfile = None
 		try:
+			print(comport)
 			if(isinstance(comport, str) and comport in listSerialPorts()):
 				self.setupSerial(comport)
 			elif(isinstance(comport, serial.Serial) or isinstance(comport, SerialPort)):
@@ -252,7 +253,7 @@ class SerialConsole(tkDialog):
 
 	def recv(self, event=None):
 		self.text.configure(state="normal")
-		self.text.configure(bg = COLORS[self.index])
+		if(debugOn) : self.text.configure(bg = COLORS[self.index])
 		self.index += 1
 		if(hasattr(self, "handle") and self.handle != None) :
 			for line in self.handle.flush():
@@ -337,6 +338,8 @@ class SerialConsole(tkDialog):
 # 					print("COM PORT ERROR!", se)
 			self.master.title("tkTerm {}".format(comport))
 			print(self.handle)
+		else:
+			print("NOT AN ACTIVE SERIAL PORT")
 	
 	def updateWindow(self):
 		self.text.configure(bg = '#%02x%02x%02x'%self.winset[4],

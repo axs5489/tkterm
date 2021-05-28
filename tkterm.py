@@ -254,9 +254,10 @@ class SerialConsole(tkDialog):
 		self.text.configure(state="normal")
 		self.text.configure(bg = COLORS[self.index])
 		self.index += 1
-		for line in self.handle.flush():
-			self.text.insert("end", line)
-			self.text.insert("end", "\n")
+		if(hasattr(self, "handle") and self.handle != None) :
+			for line in self.handle.flush():
+				self.text.insert("end", line)
+				self.text.insert("end", "\n")
 		#self.text.configure(state="disabled")
 		self.text.configure(state="readonly")
 
